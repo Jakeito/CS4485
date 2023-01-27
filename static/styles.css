@@ -1,0 +1,24 @@
+p {
+    font-style: normal;
+    color: black;
+    line-height: 0px;
+    font-size: 30px;
+    }
+    p1 {
+    font-style: normal;
+    color: black;
+    line-height: 0px;
+    font-size: 24px;
+    }
+    label {
+    display: inline-block;
+    width: 50px;
+    margin-right: 30px;
+    text-align: left;
+    line-height: 32px;
+    }
+    button {
+    margin: 4px 10px;
+    font-size: 16px;
+    line-height: 20px;
+    }
