@@ -1,24 +1,70 @@
-p {
-    font-style: normal;
-    color: black;
-    line-height: 0px;
-    font-size: 30px;
-    }
-    p1 {
-    font-style: normal;
-    color: black;
-    line-height: 0px;
-    font-size: 24px;
-    }
-    label {
-    display: inline-block;
-    width: 50px;
+.btn-lg {
+    background-color: green !important;
+    width: 275px;
+    font-weight: bold;
+    margin-top: 120px;
     margin-right: 30px;
-    text-align: left;
-    line-height: 32px;
-    }
-    button {
-    margin: 4px 10px;
-    font-size: 16px;
-    line-height: 20px;
-    }
+}
+
+.btn-lg:hover, .btn-lg:focus, .btn-lg:active, .open>.dropdown-toggle.btn-lg {
+    background-color: darkgreen !important;
+}
+
+.row {
+    margin-left: 100px;
+    margin-right: 100px;
+}
+#tutor.row {
+    margin-top: 30px;
+}
+#left-button {
+    margin-left: 200px;
+}
+.col-sm-1 {
+    margin-top: 20px;
+    width: 60px;
+}
+.col-md-auto {
+    margin-left: 70px;
+}
+.footer {
+    font-family: 'Inter';
+    margin-left: 350px;
+    margin-right: 350px;
+    margin-top: 150px;
+    margin-bottom: 50px;
+}
+p1 {
+    font-size: 22px;
+    font-weight: bolder;
+    color: #060606;
+}
+p2 {
+    font-size: 22px;
+    font-weight: bolder;
+    color: #008037;
+}
+p3 {
+    font-size: 22px;
+    font-weight: bolder;
+    color: #FF914D;
+}
+p4 {
+    font-size: 14px;
+    font-weight: 400;
+}
+
+p5 {
+    font-size: 14px;
+    font-weight: 100;
+    color: silver;
+}
+
+p6 {
+    font-size: 18px;
+    font-family: 'Inter';
+}
+p7 {
+    font-size: 36px;
+    font-family: 'Inter';
+}
