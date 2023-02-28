@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect
 import json
+import psycopg2
 app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
@@ -21,3 +22,44 @@ def register():
 @app.route('/signin', methods=['GET'])
 def signin():
     return render_template('signin.html')
+
+@app.route('/api/register', methods=['POST'])
+def add_user():
+    if request.method == 'POST':
+        user_info = request.json
+        if 'mname' in user_info:
+            insert_user(user_info['net_id'],user_info['password'],user_info['fname'],user_info['mname'],user_info['lname'],user_info['usertype'])
+        else:
+            insert_user(user_info['net_id'],user_info['password'],user_info['fname'],'',user_info['lname'],user_info['usertype'])
+        return user_info
+    
+def insert_user(net_id, password, fname, mname, lname, usertype):
+    #pass password into password check function
+
+    #connect to postgre
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+
+     #creating a cursor object using cursor()
+    cursor = conn.cursor()
+
+    #tempcode for confirming a connection
+    cursor.execute('select version()')
+
+    #fetch a single row using fetchone. method fetchmany and fetchall can be used depending on query, this is just verifying db connection
+    connectCheck = cursor.fetchone()
+    print('Connection established to: ', connectCheck)
+    
+    try:
+        
+        #call hashing function
+        #save hashedpw, and send into db
+        hashedPassword = 'temp'
+            
+        #inserting data into DB
+        cursor.execute("insert into Person (net_id, fname, mname, lname, hours_completed, usertype) values (\'" + net_id + "\', \'" + fname + "\', \'" + mname + "\', \'" + lname + "\', 0, \'" + usertype + "\')")
+        conn.commit()
+        cursor.execute("insert into Login (net_id, hashed_pw) values (\'" + net_id + "\',\'" + hashedPassword + "\')")
+        conn.commit()
+    except:
+        print("Error, user already exists")
+    conn.close()
