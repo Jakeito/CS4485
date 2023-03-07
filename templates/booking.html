@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Appointment</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <link href='https://fonts.googleapis.com/css?family=Inter' rel='stylesheet'>
+    <script defer src="/static/home.js"></script>
+    <link href="/static/styles.css" rel="stylesheet" />
+    <!-- flatpickr -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+</head>
+
+<header>
+    <div class="row align-items-end justify-content-start" style="margin-bottom: 5%;">
+        <div class="col-sm-5">
+            <img src="/static/images/v1_19.png" width="100%" height="100%">
+        </div>
+        <div class="col-sm-5">
+            <button id="home" type="button" class="btn btn-primary btn-lg"
+                style="width: 90%; height: 90%;">HOME</button>
+        </div>
+        <div class="col-sm-5">
+            <button id="about" type="button" class="btn btn-primary btn-lg"
+                style="width: 90%; height: 90%;">ABOUT</button>
+        </div>
+        <div class="col-sm-5">
+            <button id="suppSubj" type="button" class="btn btn-primary btn-lg"
+                style="width: 90%; height: 90%;">SUPPORTED SUBJECTS</button>
+        </div>
+        <div class="col-sm-5">
+            <button id="signin" type="button" class="btn btn-primary btn-lg"
+            style="width: 90%; height: 90%;">SIGN IN</button>
+        </div>
+    </div>
+</header>
+
+<body>
+    
+    <section class="book" id="book">
+        <h1 class="heading"> <span>Make</span> an Appointment </h1>
+
+        <div class="form">
+            <form action="">
+                <input type="text" placeholder="Your Name: " class="box" required>
+                <br><input type="text" placeholder="Student ID: " class="box" required>
+                <br><input type="email" placeholder="Your Email: " class="box" required>
+                <br><input type="number" placeholder="Your Number: " class="box">
+                <br><input type="datetime-local" placeholder="Select DateTime" class="box" required> <br>
+                <br><input type="submit" value="Submit" class="btn">
+            </form>
+        </div>
+    </section>
+</body>
+
+<footer>
+    <div class="footer">
+        <hr>
+        <div class="container justify-content-center">
+            <p1>Hello,</p1>
+            <p2> we are </p2>
+            <p3>ETutor</p3>
+            <br>
+            <p4>We are here to help disadvantaged students to achieve their academic goals. *</p4>
+            <br>
+            <br>
+            <br>
+            <p5>We have tutors available for a wide variety of subjects.</p5>
+            <br>
+            <p5>*Students are expected to exercise independent thought and expression. The tutors have the right to ask
+                for
+                the source of coursework content
+                and may or may not be able to assist with it.
+            </p5>
+        </div>
+    </div>
+</footer>
+
+</html>
