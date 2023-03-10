@@ -15,9 +15,17 @@
     background-color: #FF914D;
     border-color: #FF914D;
 }
-#signinButton.btn {
+#signin-button.btn {
     background-color: #FF914D;
     border-color: #FF914D;
+}
+#signup-tutor.btn {
+    background-color: green;
+    border-color: green;
+}
+#signup-student.btn {
+    background-color: green;
+    border-color: green;
 }
 .col-sm-1 {
     width: 10%;
@@ -63,6 +71,9 @@ p7 {
     font-family: 'Inter';
 }
 
+#required {
+    color: red;
+}
 h1.heading {
     color:salmon;
     text-align: center;
