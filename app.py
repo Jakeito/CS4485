@@ -28,44 +28,53 @@ def signin():
 def add_user():
     if request.method == 'POST':
         user_info = request.json
-        if 'mname' in user_info:
-            insert_user(user_info['net_id'],user_info['password'],user_info['fname'],user_info['mname'],user_info['lname'],user_info['usertype'])
+        frontend_message = strongPWD(user_info['password'])
+        if frontend_message == 'Strong':
+            if 'mname' in user_info:
+                #get return val of insertuser and check
+                insert_status = insert_user(user_info['net_id'],user_info['password'],user_info['fname'],user_info['mname'],user_info['lname'],user_info['usertype'])
+                if insert_status != 'Success':
+                    return insert_status
+            else:
+                #get return val of insertuser and check
+                insert_status = insert_user(user_info['net_id'],user_info['password'],user_info['fname'],'',user_info['lname'],user_info['usertype'])
+                if insert_status != 'Success':
+                    return insert_status
+            return frontend_message
         else:
-            insert_user(user_info['net_id'],user_info['password'],user_info['fname'],'',user_info['lname'],user_info['usertype'])
-        return user_info
+            return frontend_message
+        
     
 def insert_user(net_id, passwd, fname, mname, lname, usertype):
-    #pass password into password check function, call here
-    if strongPWD(passwd) == True :
-        #connect to postgre
-        conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+    #connect to postgre
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
 
-        #creating a cursor object using cursor()
-        cursor = conn.cursor()
+    #creating a cursor object using cursor()
+    cursor = conn.cursor()
 
-        #tempcode for confirming a connection
-        cursor.execute('select version()')
+    #tempcode for confirming a connection
+    cursor.execute('select version()')
 
-        #fetch a single row using fetchone. method fetchmany and fetchall can be used depending on query, this is just verifying db connection
-        connectCheck = cursor.fetchone()
-        print('Connection established to: ', connectCheck)
+    #fetch a single row using fetchone. method fetchmany and fetchall can be used depending on query, this is just verifying db connection
+    connectCheck = cursor.fetchone()
+    print('Connection established to: ', connectCheck)
     
-        try:
+    try:
         
-            #call hashing function
-            #save hashedpw, and send into db
-            hashedPassword = encrypt(passwd)
+        #call hashing function
+        #save hashedpw, and send into db
+        hashedPassword = encrypt(passwd)
             
-            #inserting data into DB
-            cursor.execute("insert into Person (net_id, fname, mname, lname, hours_completed, usertype) values (\'" + net_id + "\', \'" + fname + "\', \'" + mname + "\', \'" + lname + "\', 0, \'" + usertype + "\')")
-            conn.commit()
-            cursor.execute("insert into Login (net_id, hashed_pw) values (\'" + net_id + "\',\'" + hashedPassword + "\')")
-            conn.commit()
-        except:
-            print("Error, user already exists")
-        conn.close()
-    else:
-        print("User insert failed, check password requirements")
+        #inserting data into DB
+        cursor.execute("insert into Person (net_id, fname, mname, lname, hours_completed, usertype) values (\'" + net_id + "\', \'" + fname + "\', \'" + mname + "\', \'" + lname + "\', 0, \'" + usertype + "\')")
+        conn.commit()
+        cursor.execute("insert into Login (net_id, hashed_pw) values (\'" + net_id + "\',\'" + hashedPassword + "\')")
+        conn.commit()
+    except:
+        return ("Error, user already exists")
+    conn.close()
+    return 'Success'
+    
 
 ##checks if the password contains 12 character, upper and lower case character, and a number
 ##returns a boolean and sends a message to front end display
@@ -86,11 +95,12 @@ def strongPWD (pwd):
         weakPass += "Password needs at least one number.\n"
 
     if check:
-        print("Strong")
+        return "Strong"
     else:
-        print(weakPass)
+        return weakPass
 
-    return check
+#if this gets here, there is an error
+    return error
 
 ##returns an encrypted password
 def encrypt (pwd):
