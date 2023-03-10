@@ -27,7 +27,7 @@ CREATE TABLE Person (
 CREATE TABLE Login (
     net_id varchar(9) not null,
     --hashed_pw length should be changed to match the output of the hashing algorithm used
-    hashed_pw varchar(30) not null,
+    hashed_pw varchar(64) not null,
 
     PRIMARY KEY (net_id),
     FOREIGN KEY (net_id) REFERENCES Person (net_id)
@@ -86,3 +86,4 @@ CREATE TABLE FavoriteTutors(
 
 CREATE VIEW tutors AS SELECT * FROM Person WHERE usertype = 'tutor';
 CREATE VIEW students AS SELECT * FROM Person WHERE usertype = 'student';
+CREATE VIEW unique_subjects AS SELECT DISTINCT classname from subjectlist;
