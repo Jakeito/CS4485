@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect
 import json
 import psycopg2
 import hashlib
+
 app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
@@ -74,7 +75,7 @@ def insert_user(net_id, passwd, fname, mname, lname, usertype):
         return ("Error, user already exists")
     conn.close()
     return 'Success'
-    
+
 
 ##checks if the password contains 12 character, upper and lower case character, and a number
 ##returns a boolean and sends a message to front end display
@@ -94,16 +95,18 @@ def strongPWD (pwd):
         check = False
         weakPass += "Password needs at least one number.\n"
 
+
     if check:
         return "Strong"
     else:
         return weakPass
-
 #if this gets here, there is an error
     return error
+
 
 ##returns an encrypted password
 def encrypt (pwd):
     newPwd = hashlib.sha256(pwd.encode())
     newPwd = newPwd.hexdigest()
     return newPwd
+
