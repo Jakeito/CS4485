@@ -86,3 +86,4 @@ CREATE TABLE FavoriteTutors(
 
 CREATE VIEW tutors AS SELECT * FROM Person WHERE usertype = 'tutor';
 CREATE VIEW students AS SELECT * FROM Person WHERE usertype = 'student';
+CREATE VIEW unique_subjects AS SELECT DISTINCT classname from subjectlist;
