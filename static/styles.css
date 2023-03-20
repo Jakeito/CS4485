@@ -62,3 +62,36 @@ p7 {
     font-size: 36px;
     font-family: 'Inter';
 }
+
+h1.heading {
+    color:salmon;
+    text-align: center;
+}
+
+.book .form form{
+    background-color: #fff;
+    font-size: 16px;
+    text-align: center;
+    padding: 20px;
+    border-radius: 80px;
+    border: 10px dotted darkgreen;
+}
+
+input[type="submit"] {
+    background-color: #FF914D;
+    color: white;
+    padding: 5px 5px;
+    padding-top: 2px;
+    font-size: 16px;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  input[type="text"], input[type="datetime-local"], input[type="email"], input[type="number"] {
+    background-color: #ffff;
+    border-color: #FF914D;
+    border-style:groove;
+    padding: 5px 5px;
+    padding-top: 5px;
+    font-size: 15px;
+  }
