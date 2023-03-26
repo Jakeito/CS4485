@@ -101,6 +101,14 @@ def add_user():
             return frontend_message
         else:
             return frontend_message
+
+@app.route('/api/signin', methods=['POST'])
+def login_user():
+    user_info = request.json
+    #QUERY FOR LOGIN INFO HERE, COMPARE WITH user_info['net_id'] and user_info['password']
+    #RETURN 'success' or 'error'
+
+        
     
 def insert_user(net_id, passwd, fname, mname, lname, usertype):
     #connect to postgre
@@ -164,3 +172,4 @@ def encrypt (pwd):
     newPwd = hashlib.sha256(pwd.encode())
     newPwd = newPwd.hexdigest()
     return newPwd
+
