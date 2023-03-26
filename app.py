@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, session
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy, session
+from flask_session import Session
 import json
 import psycopg2
 import hashlib
@@ -10,10 +11,11 @@ app = Flask(__name__)
 
 # using SQLAlchemy to connect to a POstgreSQL database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:1234@localhost/Tutoring'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+#app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'mysecretkey'
-SESSION_TYPE = 'sqlalchemy'
+app.config['SESSION_TYPE'] = 'filesystem'
 db = SQLAlchemy(app)
+Session(app)
 
 @app.route('/', methods=['GET'])
 def redir():
@@ -49,41 +51,35 @@ class User(db.Model):
     password = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
 
-@app.route('/api/login', methods=['POST'])
+@app.route('/api/login', methods=['GET', 'POST'])
 def login():
-    # extract login credentials from request body
-    credentials = request.json()
-    username_input = credentials['net-id']
-    password_input = credentials['password']
+    if request.method =='POST':
+        # extract login credentials from request body
+        credentials = request.json()
+        username_input = credentials['net-id']
+        password_input = credentials['password']
 
-    # connect to database and retrieve user with matching credentials
-    user = User.query.filter_by(username=username_input, password=password_input).first()
+        # connect to database and retrieve user with matching credentials
+        user = User.query.filter_by(username=username_input, password=password_input).first()
 
-    # if user exists, generate token and return success response
-    if user is not None:
-        # generate and store access token for user
-        token = str(uuid.uuid4())
-        user.token = token
-        session['key'] = username_input
+        # if user exists, generate token and return success response
+        if user is not None:
+            # generate and store access token for user
+            token = str(uuid.uuid4()) #not sure if needed
+            user.token = token #not sure if needed
+            session['key'] = username_input
+            
+            # redirect to home
+            return redirect('/api/login')
         
-        # return success response with token
-        response = {
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email
-            }
-        }
-        return response
-    
-    # if user does not exist, return error response
-    else:
-        return 'Invalid username or password'
+        # if user does not exist, return error response
+        else:
+            return 'Invalid username or password'
+
 
 @app.route('/logout')
-@login_required
 def logout():
-    logout_user()
+    session.pop('key', None)
     return redirect('/home')
 
 @app.route('/api/register', methods=['POST'])
@@ -105,7 +101,6 @@ def add_user():
             return frontend_message
         else:
             return frontend_message
-        
     
 def insert_user(net_id, passwd, fname, mname, lname, usertype):
     #connect to postgre
@@ -169,4 +164,3 @@ def encrypt (pwd):
     newPwd = hashlib.sha256(pwd.encode())
     newPwd = newPwd.hexdigest()
     return newPwd
-

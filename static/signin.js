@@ -13,6 +13,12 @@ document.getElementById('signin').onclick = function () {
 document.getElementById('signup').onclick = function () {
     location.href = '/register-student';
 };
+document.getElementById('profile').onclick = function () {
+    location.href = '/profile/';
+};
+document.getElementById('logout').onclick = function () {
+    location.href = '/logout';
+};
 
 $(document).ready(function () {
     $('#signin-button').click(signin)
@@ -32,6 +38,4 @@ function signin() {
             'password': password
         })
     })
-
-    //If login is successful create cookie and redirect to home page with new buttons
 }
