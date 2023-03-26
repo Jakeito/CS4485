@@ -70,7 +70,6 @@ p7 {
     font-size: 36px;
     font-family: 'Inter';
 }
-
 #required {
     color: red;
 }
@@ -78,7 +77,6 @@ h1.heading {
     color:salmon;
     text-align: center;
 }
-
 .book .form form{
     background-color: #fff;
     font-size: 16px;
@@ -87,7 +85,6 @@ h1.heading {
     border-radius: 80px;
     border: 10px dotted darkgreen;
 }
-
 input[type="submit"] {
     background-color: #FF914D;
     color: white;
@@ -97,7 +94,6 @@ input[type="submit"] {
     text-align: center;
     cursor: pointer;
   }
-
   input[type="text"], input[type="datetime-local"], input[type="email"], input[type="number"] {
     background-color: white;
     border-left-color: darkgreen;
