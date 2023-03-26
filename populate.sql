@@ -23,6 +23,7 @@ values ('abc180000', '1234'),
 ('yza180000', 'password1234');
 --done
 
+--add date functionality to sql statements
 insert into TutorApts (session_id, tutor_id, student_id, day, time, subject)
 values (0, 'abc180000', 'mno180000', 'Monday', '9am-11am', 'Discrete Math'),
 (1, 'abc180000', 'pqr180000', 'Tuesday', '5pm-6pm', 'Differential Calculus'),
