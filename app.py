@@ -36,22 +36,31 @@ def logout():
     logout_user()
     return redirect('/home')
 
+#this register deals with registering a student, need to update method to check if net_id is formatted correctly
 @app.route('/api/register', methods=['POST'])
 def add_user():
     if request.method == 'POST':
         user_info = request.json
         frontend_message = strongPWD(user_info['password'])
         if frontend_message == 'Strong':
-            if 'mname' in user_info:
+            #if the password is strong, insert basic data such as net-id, password hash, first, middle, last name, and user type
+            if 'middle-name' in user_info:
                 #get return val of insertuser and check
-                insert_status = insert_user(user_info['net_id'],user_info['password'],user_info['fname'],user_info['mname'],user_info['lname'],user_info['usertype'])
+                insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],user_info['middle-name'],user_info['last-name'],user_info['user-type'])
                 if insert_status != 'Success':
                     return insert_status
             else:
                 #get return val of insertuser and check
-                insert_status = insert_user(user_info['net_id'],user_info['password'],user_info['fname'],'',user_info['lname'],user_info['usertype'])
+                insert_status = insert_user(user_info['net_id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'])
                 if insert_status != 'Success':
                     return insert_status
+                
+            if 'user-type' in user_info == 'tutor':
+                #if the user type is tutor, continue to insert additional data such as availability, supported subjects, and about me
+                insert_status = insert_tutor_info(user_info['net-id'], user_info['availability'], user_info['supported-subjects'], user_info['about-me'])
+                if insert_status != 'Success':
+                    return insert_status
+
             return frontend_message
         else:
             return frontend_message
@@ -110,9 +119,62 @@ def strongPWD (pwd):
         return "Strong"
     else:
         return weakPass
-#if this gets here, there is an error
-    return error
 
+#inserts a tutor's additional information
+def insert_tutor_info(net_id, availability, supported_subjects, about_me):
+    #connect to postgre
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+
+    #creating a cursor object using cursor()
+    cursor = conn.cursor()
+
+    #tempcode for confirming a connection
+    cursor.execute('select version()')
+
+    #fetch a single row using fetchone. method fetchmany and fetchall can be used depending on query, this is just verifying db connection
+    connectCheck = cursor.fetchone()
+    print('Connection established to: ', connectCheck)
+
+    #try catch will fail if the insert fails, returning an error message
+    try:
+        #insert availability into availability table, maybe an array?
+
+        #insert supported subjects into supported subjects table, supported subjects maybe an array?
+
+        #insert about me into table
+        cursor.execute('insert into AboutMe(tutor_id, about_me) values (\''+ net_id + '\', \''+ about_me +'\')')
+        cursor.commit()
+
+    except:
+        return ("Error in inserting tutor information")
+    conn.close()
+    return 'Success'
+
+#returns all of the supported subjects
+def supported_subjects():
+    #connect to postgre
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+
+    #creating a cursor object using cursor()
+    cursor = conn.cursor()
+
+    #tempcode for confirming a connection
+    cursor.execute('select version()')
+
+    #fetch a single row using fetchone. method fetchmany and fetchall can be used depending on query, this is just verifying db connection
+    connectCheck = cursor.fetchone()
+    print('Connection established to: ', connectCheck)
+
+    #try catch will fail if the search fails, returning an error message
+    try:
+        #retrieve the unique list of classes taught
+        cursor.execute('select classname from unique_subjects')
+        table = cursor.fetchall()
+        conn.close()
+        #returns a table that contains the list of class names
+        return table
+    except:
+        return ("Error in retrieving class list")
 
 ##returns an encrypted password
 def encrypt (pwd):
@@ -120,3 +182,9 @@ def encrypt (pwd):
     newPwd = newPwd.hexdigest()
     return newPwd
 
+
+##validates netID
+def idVal (netID):
+    if not netID[:3].isalpha() or not netID[3:].isnumeric():
+        return "Not a valid NetID. \n"
+    return "Valid"

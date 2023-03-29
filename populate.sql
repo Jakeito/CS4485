@@ -24,12 +24,12 @@ values ('abc180000', '1234'),
 --done
 
 --add date functionality to sql statements
-insert into TutorApts (session_id, tutor_id, student_id, day, time, subject)
-values (0, 'abc180000', 'mno180000', 'Monday', '9am-11am', 'Discrete Math'),
-(1, 'abc180000', 'pqr180000', 'Tuesday', '5pm-6pm', 'Differential Calculus'),
-(2, 'def180000', 'stu180000', 'Wednesday', '11am-1pm', 'Biology'),
-(3, 'ghi180000', 'vwx180000', 'Thursday', '2pm-3pm', 'Statistics'),
-(4, 'jkl180000', 'yza180000', 'Friday', '11am-1pm', 'Discrete Math 2');
+insert into TutorApts (session_id, tutor_id, student_id, day, time, subject, date)
+values (0, 'abc180000', 'mno180000', 'Monday', '9am-11am', 'Discrete Math','2023-04-26'),
+(1, 'abc180000', 'pqr180000', 'Tuesday', '5pm-6pm', 'Differential Calculus','2023-07-26'),
+(2, 'def180000', 'stu180000', 'Wednesday', '11am-1pm', 'Biology','2023-10-03'),
+(3, 'ghi180000', 'vwx180000', 'Thursday', '2pm-3pm', 'Statistics','2023-11-16'),
+(4, 'jkl180000', 'yza180000', 'Friday', '11am-1pm', 'Discrete Math 2','2023-11-21');
 --done
 
 insert into SubjectList (tutor_id, classname)
