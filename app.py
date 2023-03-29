@@ -175,7 +175,6 @@ def encrypt (pwd):
     newPwd = newPwd.hexdigest()
     return newPwd
 
-
 ##checks to see if the file is PNG JPEG JPG  
 def picVal (imagePath):
     if imghdr.what(imagePath) in ['jpeg','jpg', 'png']:
