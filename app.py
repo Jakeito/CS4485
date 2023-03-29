@@ -1,11 +1,23 @@
-from flask import Flask, render_template, request, jsonify, redirect
+from flask import Flask, render_template, request, jsonify, redirect, session
+from flask_sqlalchemy import SQLAlchemy
 import json
 import psycopg2
 import hashlib
+import uuid
 from flask_login import *
-import imghdr
 
 app = Flask(__name__)
+
+#connect to postgre
+conn = psycopg2.connect(
+    database='Tutoring', 
+    user='postgres', 
+    password='1234', 
+    host='localhost', 
+    port='5432'
+) 
+#creating a cursor object using cursor() to execute SQL statements
+cursor = conn.cursor()
 
 @app.route('/', methods=['GET'])
 def redir():
@@ -30,6 +42,48 @@ def register_tutor():
 @app.route('/signin', methods=['GET'])
 def signin():
     return render_template('signin.html')
+
+@app.route('/profile/<id>')
+def show_profile(id):
+    return render_template('profile.html') #This page should be able to change based on user (tutor vs student) (jxy123456 vs plt654321)
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    # extract login credentials from request body
+    credentials = request.json()
+    username_input = credentials['net-id']
+    password_input = credentials['password']
+
+    # Execute a SELECT statement to retrieve the hashed password for the inputted username_input
+    cursor.execute("SELECT hashed_pw FROM Login WHERE net_id = %s", (username_input,))
+
+    # Fetch the result and store it
+    reslt = cursor.fetchone()
+    
+    # Check if there is a match 
+    if reslt is None: 
+        print("No matching username found.")
+    else:
+        # Hashed the inputted password 
+        hashed_password = encrypt(password_input) 
+        
+        # Compare the stored password with hashed_password
+        if hashed_password != reslt[0]:
+            print ("Invalid username or password.")
+        else:
+            print("Login successful.")
+
+#Backend10: respond to API call to send back a query for the user's fav list from the database
+@app.route('/favorites/<int:id>', methods=['GET'])
+def get_favorites(id):
+    # Execute a SELECT statement to retrieve the user's fav list from the database
+    cursor.execute("SELECT * FROM FavoriteTutors WHERE id = %s", (id,))
+
+    # Fetch the results and store them in results
+    results = cursor.fetchall()
+
+    # Return the results as JSON response
+    return jsonify(results)
 
 @app.route('/logout')
 @login_required
