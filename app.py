@@ -175,3 +175,40 @@ def encrypt (pwd):
     newPwd = newPwd.hexdigest()
     return newPwd
 
+##checks to see if the file is PNG JPEG JPG  
+def picVal (imagePath):
+    if imghdr.what(imagePath) in ['jpeg','jpg', 'png']:
+        return "Valid"
+    else:
+        return "Not a supported file type.\n"
+
+
+##validates netID
+def idVal (netID):
+    if not netID[:3].isalpha() or not netID[3:].isnumeric():
+        return "Not a valid NetID. \n"
+    return "Valid"
+
+#validates subject
+def subjectVal (subject):
+    ##separates the subject at the space character
+    sub = subject.split()
+
+    if not sub[0].isalpha() or not sub[1].isnumeric():
+        return "Not a valid subject. \n"
+    return "Valid"
+
+def timeVal (timeSlot):
+    ##separates the timeSlot string at the space characters
+    day = timeSlot.split()
+
+    day[1] = day[1].replace("-", ":")
+    time = day[1].split(":")
+
+    if not day[0].lower() in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+        return "Not a valid day. \n"
+    ##checks to see if the time is valid
+    if not (int(time[0]) < 25 and int(time[2]) < 25 and int(time[1]) < 60 and int(time[3]) < 60):
+        return "Not a valid time. \n"
+    
+    return "Valid"
