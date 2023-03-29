@@ -8,12 +8,16 @@ from flask_login import *
 
 app = Flask(__name__)
 
-# using SQLAlchemy to connect to a POstgreSQL database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:1234@localhost/Tutoring'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'mysecretkey'
-SESSION_TYPE = 'sqlalchemy'
-db = SQLAlchemy(app)
+#connect to postgre
+conn = psycopg2.connect(
+    database='Tutoring', 
+    user='postgres', 
+    password='1234', 
+    host='localhost', 
+    port='5432'
+) 
+#creating a cursor object using cursor() to execute SQL statements
+cursor = conn.cursor()
 
 @app.route('/', methods=['GET'])
 def redir():
@@ -43,12 +47,6 @@ def signin():
 def show_profile(id):
     return render_template('profile.html') #This page should be able to change based on user (tutor vs student) (jxy123456 vs plt654321)
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-
 @app.route('/api/login', methods=['POST'])
 def login():
     # extract login credentials from request body
@@ -56,29 +54,36 @@ def login():
     username_input = credentials['net-id']
     password_input = credentials['password']
 
-    # connect to database and retrieve user with matching credentials
-    user = User.query.filter_by(username=username_input, password=password_input).first()
+    # Execute a SELECT statement to retrieve the hashed password for the inputted username_input
+    cursor.execute("SELECT hashed_pw FROM Login WHERE net_id = %s", (username_input,))
 
-    # if user exists, generate token and return success response
-    if user is not None:
-        # generate and store access token for user
-        token = str(uuid.uuid4())
-        user.token = token
-        session['key'] = username_input
-        
-        # return success response with token
-        response = {
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email
-            }
-        }
-        return response
+    # Fetch the result and store it
+    reslt = cursor.fetchone()
     
-    # if user does not exist, return error response
+    # Check if there is a match 
+    if reslt is None: 
+        print("No matching username found.")
     else:
-        return 'Invalid username or password'
+        # Hashed the inputted password 
+        hashed_password = encrypt(password_input) 
+        
+        # Compare the stored password with hashed_password
+        if hashed_password != reslt[0]:
+            print ("Invalid username or password.")
+        else:
+            print("Login successful.")
+
+#Backend10: respond to API call to send back a query for the user's fav list from the database
+@app.route('/favorites/<int:id>', methods=['GET'])
+def get_favorites(id):
+    # Execute a SELECT statement to retrieve the user's fav list from the database
+    cursor.execute("SELECT * FROM FavoriteTutors WHERE id = %s", (id,))
+
+    # Fetch the results and store them in results
+    results = cursor.fetchall()
+
+    # Return the results as JSON response
+    return jsonify(results)
 
 @app.route('/logout')
 @login_required
