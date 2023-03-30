@@ -40,8 +40,7 @@
             <button id="signin" type="button" class="btn btn-primary btn-lg"
             style="width: 90%; height: 90%;">SIGN IN</button>
         </div>
-        {% extends 'home.html' %}
-        {% if session.get('key') is not none %}
+        {% if session['key'] is defined %}
             {% block content %}
             <div class="col-sm-2" style="width: 10%;">
                 <button id="profile" type="button" class="btn btn-primary btn-lg"
@@ -52,7 +51,6 @@
                 style="width: 90%; height: 90%;">LOGOUT</button>
             </div>
             {% endblock content %}
-        {% else %}
         {% endif %}
     </div>
 </header>

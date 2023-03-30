@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, redirect, session
-from flask_sqlalchemy import SQLAlchemy, session
+from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 import json
 import psycopg2
@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 # using SQLAlchemy to connect to a POstgreSQL database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:1234@localhost/Tutoring'
-#app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'mysecretkey'
 app.config['SESSION_TYPE'] = 'filesystem'
 db = SQLAlchemy(app)
@@ -55,31 +55,32 @@ class User(db.Model):
 def login():
     if request.method =='POST':
         # extract login credentials from request body
-        credentials = request.json()
+        credentials = request.json
         username_input = credentials['net-id']
         password_input = credentials['password']
+        hashed = encrypt(password_input)
 
-        # connect to database and retrieve user with matching credentials
-        user = User.query.filter_by(username=username_input, password=password_input).first()
+        #connect to postgre
+        conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
 
-        # if user exists, generate token and return success response
-        if user is not None:
-            # generate and store access token for user
-            token = str(uuid.uuid4()) #not sure if needed
-            user.token = token #not sure if needed
-            session['key'] = username_input
-            
-            # redirect to home
-            return redirect('/api/login')
-        
-        # if user does not exist, return error response
-        else:
+        #creating a cursor object using cursor()
+        cursor = conn.cursor()
+    
+        try:
+            #inserting data into DB
+            cursor.execute(f"select net_id from login where hashed_pw = '{password_input}'")
+            cursor.fetchone()
+        except Exception as e:
+            print(e)
             return 'Invalid username or password'
+        
+        session['key'] = username_input
+        return redirect('/home')
 
 
 @app.route('/logout')
 def logout():
-    session.pop('key', None)
+    Session.pop('key', None)
     return redirect('/home')
 
 @app.route('/api/register', methods=['POST'])
@@ -101,14 +102,6 @@ def add_user():
             return frontend_message
         else:
             return frontend_message
-
-@app.route('/api/signin', methods=['POST'])
-def login_user():
-    user_info = request.json
-    #QUERY FOR LOGIN INFO HERE, COMPARE WITH user_info['net_id'] and user_info['password']
-    #RETURN 'success' or 'error'
-
-        
     
 def insert_user(net_id, passwd, fname, mname, lname, usertype):
     #connect to postgre
@@ -142,7 +135,7 @@ def insert_user(net_id, passwd, fname, mname, lname, usertype):
 
 ##checks if the password contains 12 character, upper and lower case character, and a number
 ##returns a boolean and sends a message to front end display
-def strongPWD (pwd):
+def strongPWD(pwd):
     check = True
     weakPass = ""
     
@@ -163,12 +156,12 @@ def strongPWD (pwd):
         return "Strong"
     else:
         return weakPass
-#if this gets here, there is an error
+    #if this gets here, there is an error
     return error
 
 
 ##returns an encrypted password
-def encrypt (pwd):
+def encrypt(pwd):
     newPwd = hashlib.sha256(pwd.encode())
     newPwd = newPwd.hexdigest()
     return newPwd
