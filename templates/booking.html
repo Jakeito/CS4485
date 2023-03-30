@@ -40,10 +40,25 @@
             <button id="requestAppointment" type="button" class="btn btn-primary btn-lg"
                 style="width: 90%; height: 90%;">APPOINTMENTS</button>
         </div>
-        <div class="col-sm-2" style="width: 10%;">
-            <button id="signin" type="button" class="btn btn-primary btn-lg"
-            style="width: 90%; height: 90%;">SIGN IN</button>
-        </div>
+        {% if session['key'] is defined %}
+            {% block signed_in %}
+            <div class="col-sm-2" style="width: 10%;">
+                <button id="profile" type="button" class="btn btn-primary btn-lg"
+                style="width: 90%; height: 90%;">PROFILE</button>
+            </div>
+            <div class="col-sm-2" style="width: 10%;">
+                <button id="logout" type="button" class="btn btn-primary btn-lg"
+                style="width: 90%; height: 90%;">LOGOUT</button>
+            </div>
+            {% endblock signed_in %}
+        {% else %}
+            {% block not_signed_in %}
+            <div class="col-sm-2" style="width: 10%;">
+                <button id="signin" type="button" class="btn btn-primary btn-lg"
+                style="width: 90%; height: 90%;">SIGN IN</button>
+            </div>
+            {% endblock not_signed_in %}
+        {% endif %}
     </div>
 </header>
 

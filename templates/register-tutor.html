@@ -38,10 +38,25 @@
             <button id="requestAppointment" type="button" class="btn btn-primary btn-lg"
                 style="width: 90%; height: 90%;">APPOINTMENTS</button>
         </div>
-        <div class="col-sm-2" style="width: 10%;">
-            <button id="signin" type="button" class="btn btn-primary btn-lg"
-            style="width: 90%; height: 90%;">SIGN IN</button>
-        </div>
+        {% if session['key'] is defined %}
+            {% block signed_in %}
+            <div class="col-sm-2" style="width: 10%;">
+                <button id="profile" type="button" class="btn btn-primary btn-lg"
+                style="width: 90%; height: 90%;">PROFILE</button>
+            </div>
+            <div class="col-sm-2" style="width: 10%;">
+                <button id="logout" type="button" class="btn btn-primary btn-lg"
+                style="width: 90%; height: 90%;">LOGOUT</button>
+            </div>
+            {% endblock signed_in %}
+        {% else %}
+            {% block not_signed_in %}
+            <div class="col-sm-2" style="width: 10%;">
+                <button id="signin" type="button" class="btn btn-primary btn-lg"
+                style="width: 90%; height: 90%;">SIGN IN</button>
+            </div>
+            {% endblock not_signed_in %}
+        {% endif %}
     </div>
 </header>
 
@@ -73,7 +88,7 @@
                 </div>
                 <div class="form-group">
                     <label for="inputPassword">Password</label>
-                    <input type="text" class="form-control" id="input-password" placeholder="Password" required>
+                    <input type="password" class="form-control" id="input-password" placeholder="Password" required>
                     <small id="required" class="form-text">* Required</small>
                 </div>
                 <div class="form-group">
@@ -86,7 +101,7 @@
                     <br>
                     <small id="pictureHelp" class="form-text text-muted">Supported file types: PNG, JPEG/JPG</small>
                     <br>
-                    <input type="file" class="form-control-file" id="tutor-picture" required>
+                    <input type="file" name="file" class="form-control-file" accept='.png, .jpg, .jpeg' id="tutor-picture" required>
                     <br>
                     <small id="required" class="form-text">* Required</small>
                 </div>

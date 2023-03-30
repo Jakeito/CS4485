@@ -1,13 +1,16 @@
-from flask import Flask, render_template, request, jsonify, redirect, session
+from flask import Flask, render_template, request, jsonify, redirect, session, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 import json
 import psycopg2
 import hashlib
 import uuid
+import os
 from flask_login import *
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'tutors/'
 
 # using SQLAlchemy to connect to a POstgreSQL database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:1234@localhost/Tutoring'
@@ -68,22 +71,47 @@ def login():
     
         try:
             #inserting data into DB
-            cursor.execute(f"select net_id from login where hashed_pw = '{password_input}'")
-            cursor.fetchone()
+            cursor.execute(f"select net_id from login where hashed_pw = '{password_input}'") #CHANGE THIS TO HASHED WHEN WE START STORING HASHED
+            results = cursor.fetchone()
         except Exception as e:
             print(e)
+            conn.close()
             return 'Invalid username or password'
-        
-        session['key'] = username_input
-        return redirect('/home')
+        if results is not None:
+            session['key'] = username_input
+            conn.close()
+            return redirect(url_for('home'))
+        else:
+            return 'Invalid username or password'
 
 
 @app.route('/logout')
 def logout():
-    Session.pop('key', None)
+    session.pop('key', None)
     return redirect('/home')
 
-@app.route('/api/register', methods=['POST'])
+@app.route('/api/tutor-picture', methods=['POST'])
+def add_pic():
+    net_id = request.args.get('net-id')
+    try:
+        if 'file' not in request.files:
+            print('missing file')
+            return 'failed'
+        pic = request.files['file']
+        if pic.filename == '':
+            print('no file')
+            return 'failed'
+        filename = secure_filename(pic.filename)
+        path = app.config['UPLOAD_FOLDER'] + net_id
+        if not os.path.exists(path):
+            os.makedirs(path)
+        pic.save(os.path.join(app.config['UPLOAD_FOLDER'] + net_id + '/', filename))
+    except Exception as e:
+        print(e)
+        return 'failed'
+    return 'success'
+
+@app.route('/api/register-student', methods=['POST'])
 def add_user():
     if request.method == 'POST':
         user_info = request.json
@@ -91,12 +119,12 @@ def add_user():
         if frontend_message == 'Strong':
             if 'mname' in user_info:
                 #get return val of insertuser and check
-                insert_status = insert_user(user_info['net_id'],user_info['password'],user_info['fname'],user_info['mname'],user_info['lname'],user_info['usertype'])
+                insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],user_info['middle-name'],user_info['last-name'],user_info['user-type'])
                 if insert_status != 'Success':
                     return insert_status
             else:
                 #get return val of insertuser and check
-                insert_status = insert_user(user_info['net_id'],user_info['password'],user_info['fname'],'',user_info['lname'],user_info['usertype'])
+                insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'])
                 if insert_status != 'Success':
                     return insert_status
             return frontend_message
@@ -165,4 +193,7 @@ def encrypt(pwd):
     newPwd = hashlib.sha256(pwd.encode())
     newPwd = newPwd.hexdigest()
     return newPwd
+
+if __name__ == '__main__':
+    app.run(debug=True)
 
