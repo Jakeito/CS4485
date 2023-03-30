@@ -7,9 +7,21 @@ document.getElementById("about").onclick = function () {
 document.getElementById("suppSubj").onclick = function () {
     location.href = "/suppSubj";
 };
-document.getElementById("signin").onclick = function () {
-    location.href = "/signin";
-};
+if (document.getElementById("signin") !== null) {
+    document.getElementById("signin").onclick = function () {
+        location.href = "/signin";
+    };
+}
+if (document.getElementById("profile") !== null ) {
+    document.getElementById("profile").onclick = function () {
+        location.href = "/profile/";
+    };
+}
+if (document.getElementById("logout") !== null) {
+    document.getElementById("logout").onclick = function () {
+        location.href = "/logout";
+    };
+}
 document.getElementById("signup-tutor").onclick = function () {
     location.href = "/register-tutor";
 }
@@ -19,13 +31,13 @@ $(document).ready(function () {
 
 
 function register_student() {
-    const firstName = $('#input-first-name').val()
-    const middleName = $('#input-middle-name').val()
-    const lastName = $('#input-last-name').val()
-    const netID = $('#input-net-id').val()
-    const password = $('#input-password').val()
+    var firstName = $('#input-first-name').val()
+    var middleName = $('#input-middle-name').val()
+    var lastName = $('#input-last-name').val()
+    var netID = $('#input-net-id').val()
+    var password = $('#input-password').val()
     console.log(netID + '\n' + password)
-    const response = fetch('/api/register-student', {
+    fetch('/api/register-student', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -38,7 +50,13 @@ function register_student() {
             'password': password,
             'user-type': 'student'
         })
-    })
-
-    //If response is not success, send error message to user
+    }).then(response=>response.text())
+    .then(data=>{
+        if (data !== 'Strong') {
+            alert(data);
+        }
+        else {
+            window.location.href = '/home';
+        }
+    });
 }
