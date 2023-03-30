@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 import json
 import psycopg2
 import hashlib
+import imghdr
 import uuid
 from flask_login import *
 
@@ -110,7 +111,7 @@ def add_user():
             return frontend_message
         else:
             return frontend_message
-        
+              
     
 def insert_user(net_id, passwd, fname, mname, lname, usertype):
     #connect to postgre
@@ -141,6 +142,35 @@ def insert_user(net_id, passwd, fname, mname, lname, usertype):
         return ("Error, user already exists")
     conn.close()
     return 'Success'
+
+
+##checks to see if the appointment is valid, then calls insertAppointment to add to the database
+@app.route('/api/register-appointment', methods=['POST'])
+def appointmentCreation ():
+    timeSlotInfo = request.json
+    timeSlot = timeSlotInfo['day'] + " " + timeSlotInfo['time']
+    timeSlot_status = timeVal(timeSlot)
+
+    if timeSlot_status == 'Valid':
+        appointment_status = insertAppointment (timeSlotInfo['session_id'], timeSlotInfo['tutor_id'], timeSlotInfo['student_id'], timeSlotInfo['day'], timeSlotInfo['time'])
+        return appointment_status
+    else:
+        return timeSlot_status
+
+
+##adds the appointment to the database
+def insertAppointment(session_id, tutor_id, student_id, day, time):
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("insert into TutorApts (session_id, tutor_id, student_id, day, time) values (\'" + session_id + "\', \'" + tutor_id + "\', \'" + student_id + "\', \'" + day + "\', \'" + time + "\')")
+        conn.commit()
+    except:
+        return ("Error, appointment could not be created")
+    conn.close()
+    return 'Success'
+
 
 ##checks if the password contains 12 character, upper and lower case character, and a number
 ##returns a boolean and sends a message to front end display
