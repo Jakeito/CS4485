@@ -36,14 +36,19 @@ def logout():
     logout_user()
     return redirect('/home')
 
-#this register deals with registering a student, need to update method to check if net_id is formatted correctly
-@app.route('/api/register', methods=['POST'])
-def add_user():
+#this register deals with registering a student
+@app.route('/api/register-student', methods=['POST'])
+def add_student():
     if request.method == 'POST':
         user_info = request.json
-        frontend_message = strongPWD(user_info['password'])
-        if frontend_message == 'Strong':
-            #if the password is strong, insert basic data such as net-id, password hash, first, middle, last name, and user type
+        frontend_message = idVal(user_info['net-id'])
+        #first, check if the username is in a valid net-id format, and if not return an error message
+
+        #check username and pwd input input
+        username_valid = idVal(user_info['net-id'])
+        password_valid = strongPWD(user_info['password'])
+
+        if username_valid == password_valid == 'Valid':
             if 'middle-name' in user_info:
                 #get return val of insertuser and check
                 insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],user_info['middle-name'],user_info['last-name'],user_info['user-type'])
@@ -54,17 +59,60 @@ def add_user():
                 insert_status = insert_user(user_info['net_id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'])
                 if insert_status != 'Success':
                     return insert_status
-                
-            if 'user-type' in user_info == 'tutor':
-                #if the user type is tutor, continue to insert additional data such as availability, supported subjects, and about me
-                insert_status = insert_tutor_info(user_info['net-id'], user_info['availability'], user_info['supported-subjects'], user_info['about-me'])
-                if insert_status != 'Success':
-                    return insert_status
 
-            return frontend_message
-        else:
-            return frontend_message
+#this register deals with registering a student
+@app.route('/api/register-tutor', methods=['POST'])
+def add_tutor():
+    if request.method == 'POST':
+        user_info = request.json
+        frontend_msg = ''
+
+        #check username and pwd input input
+        username_valid = idVal(user_info['net-id'])
+        password_valid = strongPWD(user_info['password'])
+
+        #validate subjects and timeslots
+        availability_valid = 'Valid'
+        #availability_array is an array of day and time pairs, and each pair needs to be validated
+        availability_array = user_info['availability'].split('\n')
+        for timeslots in availability_array:
+            if timeVal(timeslots) != 'Valid':
+                availability_valid = 'At least one availability is not formatted correctly'
+
+
+        supported_subjects_valid = 'Valid'
+        #availability_array is an array of class abbreviation and numbers, and each pair needs to be validated, but can be inserted as one string
+        supported_subjects_array = user_info['support-subjects'].split('\n')
+        for subjects in supported_subjects_array:
+            if subjectVal(subjects) != 'Valid':
+                supported_subjects_valid = 'At least one inputted subject in not formatted correctly'
+
+
+        if username_valid == password_valid == availability_valid == supported_subjects == 'Valid':
+            #insert values here based on if the user has a middle name
+            if 'middle-name' in user_info:
+                #get return val of insertuser and check
+                insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],user_info['middle-name'],user_info['last-name'],user_info['user-type'])
+            else:
+                #get return val of insertuser and check
+                insert_status = insert_user(user_info['net_id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'])
+
+            insert_tutor_info(user_info['net-id'], user_info['availability'], user_info['support-subjects'], user_info['about-me'])
         
+        else:
+            if username_valid != 'Valid':
+                frontend_msg += username_valid
+            if password_valid != 'Valid':
+                frontend_msg += '\n'
+                frontend_msg += password_valid
+            if availability_valid != 'Valid':
+                frontend_msg += '\n'
+                frontend_msg += availability_valid
+            if supported_subjects_valid != 'Valid':
+                frontend_msg += '\n'
+                frontend_msg += supported_subjects_valid
+            return frontend_msg
+
     
 def insert_user(net_id, passwd, fname, mname, lname, usertype):
     #connect to postgre
@@ -137,9 +185,27 @@ def insert_tutor_info(net_id, availability, supported_subjects, about_me):
 
     #try catch will fail if the insert fails, returning an error message
     try:
-        #insert availability into availability table, maybe an array?
+        #insert availability into availability table, input is a string with input separated by newlines
+        availability_array = availability.split('\n')
+        
+        for x in availability_array:
+            #making sure to cull accidental newlines
+            if x != '':
+                #each availability entry in the array/list is stored as "[day] [time]", and needs to be split further via its space
+                day_time_split = x.split()
 
-        #insert supported subjects into supported subjects table, supported subjects maybe an array?
+                #insert each date and time entry
+                cursor.execute('insert into TutorAvailabiltiy (tutor_id, day, time) values (\''+ net_id +'\',\''+ day_time_split[0] +'\',\'' + day_time_split[1] + '\')')
+                cursor.commit()
+
+        #insert supported subjects into supported subjects table, input is a string with input separated by newlines
+        supported_subjects_array = supported_subjects.split('\n')
+
+        for input in supported_subjects_array:
+            if input != '':
+                #insert each subject entry
+                cursor.execute('insert into SubjectList (tutor_id, classname) values (\''+ net_id +'\',\''+ input +'\')')
+        
 
         #insert about me into table
         cursor.execute('insert into AboutMe(tutor_id, about_me) values (\''+ net_id + '\', \''+ about_me +'\')')
@@ -187,4 +253,28 @@ def encrypt (pwd):
 def idVal (netID):
     if not netID[:3].isalpha() or not netID[3:].isnumeric():
         return "Not a valid NetID. \n"
+    return "Valid"
+
+#validates subject
+def subjectVal (subject):
+    ##separates the subject at the space character
+    sub = subject.split()
+
+    if not sub[0].isalpha() or not sub[1].isnumeric():
+        return "Not a valid subject. \n"
+    return "Valid"
+
+def timeVal (timeSlot):
+    ##separates the timeSlot string at the space characters
+    day = timeSlot.split()
+
+    day[1] = day[1].replace("-", ":")
+    time = day[1].split(":")
+
+    if not day[0].lower() in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+        return "Not a valid day. \n"
+    ##checks to see if the time is valid
+    if not (int(time[0]) < 25 and int(time[2]) < 25 and int(time[1]) < 60 and int(time[3]) < 60):
+        return "Not a valid time. \n"
+    
     return "Valid"
