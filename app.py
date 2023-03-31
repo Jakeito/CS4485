@@ -49,6 +49,12 @@ def signin():
 def show_profile(id):
     return render_template('profile.html') #This page should be able to change based on user (tutor vs student) (jxy123456 vs plt654321)
 
+@app.route('/api/register-tutor', methods=['POST'])
+def check_response():
+    data = request.json
+    print(data)
+    return data
+
 @app.route('/api/login', methods=['GET', 'POST'])
 def login():
     if request.method =='POST':
@@ -79,36 +85,12 @@ def login():
         else:
             return 'Invalid username or password'
 
-@app.route('/api/login', methods=['POST'])
-def login():
-    # extract login credentials from request body
-    credentials = request.json()
-    username_input = credentials['net-id']
-    password_input = credentials['password']
-
-    # Execute a SELECT statement to retrieve the hashed password for the inputted username_input
-    cursor.execute("SELECT hashed_pw FROM Login WHERE net_id = %s", (username_input,))
-
-    # Fetch the result and store it
-    reslt = cursor.fetchone()
-    
-    # Check if there is a match 
-    if reslt is None: 
-        print("No matching username found.")
-    else:
-        # Hashed the inputted password 
-        hashed_password = encrypt(password_input) 
-        
-        # Compare the stored password with hashed_password
-        if hashed_password != reslt[0]:
-            print ("Invalid username or password.")
-        else:
-            print("Login successful.")
-
 #Backend10: respond to API call to send back a query for the user's fav list from the database
 @app.route('/favorites/<int:id>', methods=['GET'])
 def get_favorites(id):
     # Execute a SELECT statement to retrieve the user's fav list from the database
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
+    cursor = conn.cursor() 
     cursor.execute("SELECT * FROM FavoriteTutors WHERE id = %s", (id,))
 
     # Fetch the results and store them in results
