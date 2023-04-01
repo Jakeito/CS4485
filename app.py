@@ -95,7 +95,7 @@ def get_favorites(id):
 
     # Fetch the results and store them in results
     results = cursor.fetchall()
-
+    conn.close()
     # Return the results as JSON response
     return jsonify(results)
 
@@ -103,6 +103,16 @@ def get_favorites(id):
 def logout():
     session.pop('key', None)
     return redirect('/home')
+
+@app.route('/api/subjects', methods=['GET'])
+def get_all_subjects():
+    #turning table into string for frontend
+    class_table_dirty = supported_subjects()
+    class_table_clean = []
+    for element in class_table_dirty:
+        class_table_clean.append(element[0])
+
+    return str(class_table_clean)
 
 @app.route('/api/tutor-picture', methods=['POST'])
 def add_pic():
@@ -357,6 +367,7 @@ def supported_subjects():
         #returns a table that contains the list of class names
         return table
     except:
+        conn.close()
         return ("Error in retrieving class list")
 
 ##returns an encrypted password
