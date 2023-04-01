@@ -41,9 +41,6 @@ def logout():
 def add_student():
     if request.method == 'POST':
         user_info = request.json
-        frontend_message = idVal(user_info['net-id'])
-        #first, check if the username is in a valid net-id format, and if not return an error message
-
         #check username and pwd input input
         username_valid = idVal(user_info['net-id'])
         password_valid = strongPWD(user_info['password'])
