@@ -1,3 +1,4 @@
+DROP VIEW IF EXISTS unique_subjects;
 DROP VIEW IF EXISTS tutors;
 DROP VIEW IF EXISTS students;
 DROP TABLE IF EXISTS FavoriteTutors;
@@ -45,6 +46,8 @@ CREATE TABLE TutorApts (
     --longest possible input is "xx:xxam-xx:xxpm", 
     time varchar(18) not null,
     subject varchar (30) not null,
+    --dates should be formatted as "yyyy-mm-dd"
+    date varchar(10) not null,
 
 
     PRIMARY KEY (session_id),
@@ -81,6 +84,15 @@ CREATE TABLE FavoriteTutors(
 
     PRIMARY KEY (student_id, tutor_id),
     FOREIGN KEY (student_id) REFERENCES Person (net_id),
+    FOREIGN KEY (tutor_id) REFERENCES Person (net_id)
+);
+
+CREATE TABLE AboutMe(
+    tutor_id varchar(9) not null,
+    --about me should be a max of 500 characters
+    about_me varchar(500),
+
+    PRIMARY KEY (tutor_id),
     FOREIGN KEY (tutor_id) REFERENCES Person (net_id)
 );
 

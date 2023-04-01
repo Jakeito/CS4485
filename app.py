@@ -125,25 +125,82 @@ def add_pic():
         return 'failed'
     return 'success'
 
+#this register deals with registering a student
 @app.route('/api/register-student', methods=['POST'])
-def add_user():
+def add_student():
+
     if request.method == 'POST':
         user_info = request.json
-        frontend_message = strongPWD(user_info['password'])
-        if frontend_message == 'Strong':
-            if 'mname' in user_info:
+        #check username and pwd input input
+        username_valid = idVal(user_info['net-id'])
+        password_valid = strongPWD(user_info['password'])
+
+        if username_valid == password_valid == 'Valid':
+            if 'middle-name' in user_info:
                 #get return val of insertuser and check
                 insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],user_info['middle-name'],user_info['last-name'],user_info['user-type'])
                 if insert_status != 'Success':
                     return insert_status
             else:
                 #get return val of insertuser and check
-                insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'])
+                insert_status = insert_user(user_info['net_id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'])
                 if insert_status != 'Success':
                     return insert_status
-            return frontend_message
         else:
-            return frontend_message
+            return username_valid + '\n' + password_valid
+
+#this register deals with registering a tutor
+@app.route('/api/register-tutor', methods=['POST'])
+def add_tutor():
+    if request.method == 'POST':
+        user_info = request.json
+        frontend_msg = ''
+
+        #check username and pwd input input
+        username_valid = idVal(user_info['net-id'])
+        password_valid = strongPWD(user_info['password'])
+
+        #validate subjects and timeslots
+        availability_valid = 'Valid'
+        #availability_array is an array of day and time pairs, and each pair needs to be validated
+        availability_array = user_info['availability'].split('\n')
+        for timeslots in availability_array:
+            if timeVal(timeslots) != 'Valid':
+                availability_valid = 'At least one availability is not formatted correctly'
+
+
+        supported_subjects_valid = 'Valid'
+        #availability_array is an array of class abbreviation and numbers, and each pair needs to be validated, but can be inserted as one string
+        supported_subjects_array = user_info['support-subjects'].split('\n')
+        for subjects in supported_subjects_array:
+            if subjectVal(subjects) != 'Valid':
+                supported_subjects_valid = 'At least one inputted subject in not formatted correctly'
+
+
+        if username_valid == password_valid == availability_valid == supported_subjects == 'Valid':
+            #insert values here based on if the user has a middle name
+            if 'middle-name' in user_info:
+                #get return val of insertuser and check
+                insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],user_info['middle-name'],user_info['last-name'],user_info['user-type'])
+            else:
+                #get return val of insertuser and check
+                insert_status = insert_user(user_info['net_id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'])
+
+            insert_tutor_info(user_info['net-id'], user_info['availability'], user_info['support-subjects'], user_info['about-me'])
+        
+        else:
+            if username_valid != 'Valid':
+                frontend_msg += username_valid
+            if password_valid != 'Valid':
+                frontend_msg += '\n'
+                frontend_msg += password_valid
+            if availability_valid != 'Valid':
+                frontend_msg += '\n'
+                frontend_msg += availability_valid
+            if supported_subjects_valid != 'Valid':
+                frontend_msg += '\n'
+                frontend_msg += supported_subjects_valid
+            return frontend_msg
     
 def insert_user(net_id, passwd, fname, mname, lname, usertype):
     #connect to postgre
@@ -227,15 +284,87 @@ def strongPWD(pwd):
         return "Strong"
     else:
         return weakPass
-    #if this gets here, there is an error
-    return error
 
+#inserts a tutor's additional information
+def insert_tutor_info(net_id, availability, supported_subjects, about_me):
+    #connect to postgre
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+
+    #creating a cursor object using cursor()
+    cursor = conn.cursor()
+
+    #tempcode for confirming a connection
+    cursor.execute('select version()')
+
+    #fetch a single row using fetchone. method fetchmany and fetchall can be used depending on query, this is just verifying db connection
+    connectCheck = cursor.fetchone()
+    print('Connection established to: ', connectCheck)
+
+    #try catch will fail if the insert fails, returning an error message
+    try:
+        #insert availability into availability table, input is a string with input separated by newlines
+        availability_array = availability.split('\n')
+        
+        for x in availability_array:
+            #making sure to cull accidental newlines
+            if x != '':
+                #each availability entry in the array/list is stored as "[day] [time]", and needs to be split further via its space
+                day_time_split = x.split()
+
+                #insert each date and time entry
+                cursor.execute('insert into TutorAvailabiltiy (tutor_id, day, time) values (\''+ net_id +'\',\''+ day_time_split[0] +'\',\'' + day_time_split[1] + '\')')
+                cursor.commit()
+
+        #insert supported subjects into supported subjects table, input is a string with input separated by newlines
+        supported_subjects_array = supported_subjects.split('\n')
+
+        for input in supported_subjects_array:
+            if input != '':
+                #insert each subject entry
+                cursor.execute('insert into SubjectList (tutor_id, classname) values (\''+ net_id +'\',\''+ input +'\')')
+        
+
+        #insert about me into table
+        cursor.execute('insert into AboutMe(tutor_id, about_me) values (\''+ net_id + '\', \''+ about_me +'\')')
+        cursor.commit()
+
+    except:
+        return ("Error in inserting tutor information")
+    conn.close()
+    return 'Success'
+
+#returns all of the supported subjects
+def supported_subjects():
+    #connect to postgre
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+
+    #creating a cursor object using cursor()
+    cursor = conn.cursor()
+
+    #tempcode for confirming a connection
+    cursor.execute('select version()')
+
+    #fetch a single row using fetchone. method fetchmany and fetchall can be used depending on query, this is just verifying db connection
+    connectCheck = cursor.fetchone()
+    print('Connection established to: ', connectCheck)
+
+    #try catch will fail if the search fails, returning an error message
+    try:
+        #retrieve the unique list of classes taught
+        cursor.execute('select classname from unique_subjects')
+        table = cursor.fetchall()
+        conn.close()
+        #returns a table that contains the list of class names
+        return table
+    except:
+        return ("Error in retrieving class list")
 
 ##returns an encrypted password
 def encrypt(pwd):
     newPwd = hashlib.sha256(pwd.encode())
     newPwd = newPwd.hexdigest()
     return newPwd
+
 
 if __name__ == '__main__':
     app.run(debug=True)
@@ -246,7 +375,6 @@ def picVal (imagePath):
         return "Valid"
     else:
         return "Not a supported file type.\n"
-
 
 ##validates netID
 def idVal (netID):
@@ -277,3 +405,4 @@ def timeVal (timeSlot):
         return "Not a valid time. \n"
     
     return "Valid"
+
