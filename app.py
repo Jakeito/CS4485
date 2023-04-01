@@ -36,6 +36,27 @@ def logout():
     logout_user()
     return redirect('/home')
 
+@app.route('/api/tutor-picture', methods=['POST'])
+def add_pic():
+    net_id = request.args.get('net-id')
+    try:
+        if 'file' not in request.files:
+            print('missing file')
+            return 'failed'
+        pic = request.files['file']
+        if pic.filename == '':
+            print('no file')
+            return 'failed'
+        filename = secure_filename(pic.filename)
+        path = app.config['UPLOAD_FOLDER'] + net_id
+        if not os.path.exists(path):
+            os.makedirs(path)
+        pic.save(os.path.join(app.config['UPLOAD_FOLDER'] + net_id + '/', filename))
+    except Exception as e:
+        print(e)
+        return 'failed'
+    return 'success'
+
 #this register deals with registering a student
 @app.route('/api/register-student', methods=['POST'])
 def add_student():
