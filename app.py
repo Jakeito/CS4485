@@ -77,8 +77,11 @@ def add_student():
                 insert_status = insert_user(user_info['net_id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'])
                 if insert_status != 'Success':
                     return insert_status
+        else:
+            return username_valid + '\n' + password_valid
 
-#this register deals with registering a student
+
+#this register deals with registering a tutor
 @app.route('/api/register-tutor', methods=['POST'])
 def add_tutor():
     if request.method == 'POST':
