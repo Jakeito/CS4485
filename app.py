@@ -49,12 +49,6 @@ def signin():
 def show_profile(id):
     return render_template('profile.html') #This page should be able to change based on user (tutor vs student) (jxy123456 vs plt654321)
 
-@app.route('/api/register-tutor', methods=['POST'])
-def check_response():
-    data = request.json
-    print(data)
-    return data
-
 @app.route('/api/login', methods=['GET', 'POST'])
 def login():
     if request.method =='POST':
@@ -114,7 +108,6 @@ def get_all_subjects():
 
     return str(class_table_clean)
 
-@app.route('/api/tutor-picture', methods=['POST'])
 def add_pic():
     net_id = request.args.get('net-id')
     try:
@@ -132,8 +125,7 @@ def add_pic():
         pic.save(os.path.join(app.config['UPLOAD_FOLDER'] + net_id + '/', filename))
     except Exception as e:
         print(e)
-        return 'failed'
-    return 'success'
+    return
 
 #this register deals with registering a student
 @app.route('/api/register-student', methods=['POST'])

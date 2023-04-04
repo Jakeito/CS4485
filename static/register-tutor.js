@@ -64,6 +64,13 @@ function register_tutor() {
     fetch(`/api/tutor-picture?net-id=${netID}`, {
         method: 'POST',
         body: pictureFile
-    })
-    //If response is not success, display error message to user
+    }).then(response=>response.text())
+    .then(data=>{
+        if (data !== 'Valid') {
+            alert(data);
+        }
+        else {
+            window.location.href = '/home';
+        }
+    });
 }
