@@ -136,22 +136,28 @@ def add_student():
         #check username and pwd input input
         username_valid = idVal(user_info['net-id'])
         password_strong = strongPWD(user_info['password'])
+        frontend_msg = ''
 
         if username_valid == 'Valid' and password_strong == 'Strong':
             if 'middle-name' in user_info:
                 #get return val of insertuser and check
                 insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],user_info['middle-name'],user_info['last-name'],user_info['user-type'].lower())
-                if insert_status != 'Success':
+                if insert_status != 'Valid':
                     return insert_status
             else:
                 #get return val of insertuser and check
                 insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'].lower())
-                if insert_status != 'Success':
+                if insert_status != 'Valid':
                     return insert_status
                 
-            return 'Success'
+            return 'Valid'
         else:
-            return username_valid + '\n' + password_strong
+            if username_valid != 'Valid':
+                frontend_msg += username_valid
+                frontend_msg += '\n'
+            if password_strong != 'Strong':
+                frontend_msg += password_strong
+            return frontend_msg
 
 #this register deals with registering a tutor
 @app.route('/api/register-tutor', methods=['POST'])
@@ -233,7 +239,7 @@ def insert_user(net_id, passwd, fname, mname, lname, usertype):
     except:
         return ("Error, user already exists")
     conn.close()
-    return 'Success'
+    return 'Valid'
 
 
 ##checks to see if the appointment is valid, then calls insertAppointment to add to the database
@@ -334,7 +340,7 @@ def insert_tutor_info(net_id, availability, supported_subjects, about_me):
     except:
         return ("Error in inserting tutor information")
     conn.close()
-    return 'Success'
+    return 'Valid'
 
 #returns all of the supported subjects
 def supported_subjects():
