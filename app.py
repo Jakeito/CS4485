@@ -409,3 +409,49 @@ def timeVal (timeSlot):
     
     return "Valid"
 
+
+# Define the filter endpoint
+@app.route('/tutors/filter')
+def filter_tutors():
+    #connect to postgre
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+
+    # Get the filter input from the request query parameters
+    name = request.args.get('name')
+    subjects = request.args.get('subjects')
+
+    # Define the SQL query to filter tutors
+    sql_query = """
+        SELECT * FROM tutors
+        WHERE 1=1
+    """
+
+    # Add filter conditions to the SQL query
+    if name:
+        sql_query += f" AND LOWER(name) LIKE '%{name.lower()}%'"
+
+    if subjects:
+        # Split the subjects input into an array of prefixes
+        prefixes = [prefix.strip().upper() for prefix in subjects.split(",")]
+
+        # Generate a list of subject condition strings for each prefix
+        subject_conditions = [f"subject ILIKE '{prefix}%' " for prefix in prefixes]
+
+        # Combine the subject conditions with OR operators
+        subject_condition = " OR ".join(subject_conditions)
+
+        # Add the combined subject condition to the SQL query
+        sql_query += f" AND ({subject_condition})"
+
+    # Execute the SQL query to filter tutors
+    with conn.cursor() as curs:
+        curs.execute(sql_query)
+        tutors = curs.fetchall()
+
+    # Convert the list of tutor tuples to a list of tutor dictionaries
+    tutor_dicts = [dict(zip(('id', 'name', 'subject'), tutor)) for tutor in tutors]
+
+    # Return the filtered tutors as a JSON response
+    return jsonify(tutor_dicts)
+
+
