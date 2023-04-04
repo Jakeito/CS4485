@@ -106,7 +106,7 @@ def get_all_subjects():
     for element in class_table_dirty:
         class_table_clean.append(element[0])
 
-    return str(class_table_clean)
+    return class_table_clean
 
 def add_pic():
     net_id = request.args.get('net-id')
@@ -135,21 +135,23 @@ def add_student():
         user_info = request.json
         #check username and pwd input input
         username_valid = idVal(user_info['net-id'])
-        password_valid = strongPWD(user_info['password'])
+        password_strong = strongPWD(user_info['password'])
 
-        if username_valid == password_valid == 'Valid':
+        if username_valid == 'Valid' and password_strong == 'Strong':
             if 'middle-name' in user_info:
                 #get return val of insertuser and check
-                insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],user_info['middle-name'],user_info['last-name'],user_info['user-type'])
+                insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],user_info['middle-name'],user_info['last-name'],user_info['user-type'].lower())
                 if insert_status != 'Success':
                     return insert_status
             else:
                 #get return val of insertuser and check
-                insert_status = insert_user(user_info['net_id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'])
+                insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'].lower())
                 if insert_status != 'Success':
                     return insert_status
+                
+            return 'Success'
         else:
-            return username_valid + '\n' + password_valid
+            return username_valid + '\n' + password_strong
 
 #this register deals with registering a tutor
 @app.route('/api/register-tutor', methods=['POST'])
@@ -160,7 +162,7 @@ def add_tutor():
 
         #check username and pwd input input
         username_valid = idVal(user_info['net-id'])
-        password_valid = strongPWD(user_info['password'])
+        password_strong = strongPWD(user_info['password'])
 
         #validate subjects and timeslots
         availability_valid = 'Valid'
@@ -169,7 +171,7 @@ def add_tutor():
         for timeslots in availability_array:
             if timeVal(timeslots) != 'Valid':
                 availability_valid = 'At least one availability is not formatted correctly'
-
+        
 
         supported_subjects_valid = 'Valid'
         #availability_array is an array of class abbreviation and numbers, and each pair needs to be validated, but can be inserted as one string
@@ -178,24 +180,23 @@ def add_tutor():
             if subjectVal(subjects) != 'Valid':
                 supported_subjects_valid = 'At least one inputted subject in not formatted correctly'
 
-
-        if username_valid == password_valid == availability_valid == supported_subjects == 'Valid':
+        if username_valid == 'Valid' and password_strong == 'Strong' and availability_valid == 'Valid' and supported_subjects_valid == 'Valid':
             #insert values here based on if the user has a middle name
             if 'middle-name' in user_info:
                 #get return val of insertuser and check
-                insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],user_info['middle-name'],user_info['last-name'],user_info['user-type'])
+                insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],user_info['middle-name'],user_info['last-name'],user_info['user-type'].lower())
             else:
                 #get return val of insertuser and check
-                insert_status = insert_user(user_info['net_id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'])
+                insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'].lower())
 
             insert_tutor_info(user_info['net-id'], user_info['availability'], user_info['support-subjects'], user_info['about-me'])
-        
+            return insert_status
         else:
             if username_valid != 'Valid':
                 frontend_msg += username_valid
-            if password_valid != 'Valid':
+            if password_strong != 'Strong':
                 frontend_msg += '\n'
-                frontend_msg += password_valid
+                frontend_msg += password_strong
             if availability_valid != 'Valid':
                 frontend_msg += '\n'
                 frontend_msg += availability_valid
