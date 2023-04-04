@@ -170,7 +170,7 @@ def add_tutor():
         availability_array = user_info['availability'].split('\n')
         for timeslots in availability_array:
             if timeVal(timeslots) != 'Valid':
-                availability_valid = 'At least one availability is not formatted correctly'
+                availability_valid = 'At least one availability is not formatted correctly, please format as [Day] [Start-End]'
         
 
         supported_subjects_valid = 'Valid'
@@ -178,7 +178,7 @@ def add_tutor():
         supported_subjects_array = user_info['support-subjects'].split('\n')
         for subjects in supported_subjects_array:
             if subjectVal(subjects) != 'Valid':
-                supported_subjects_valid = 'At least one inputted subject in not formatted correctly'
+                supported_subjects_valid = 'At least one inputted subject in not formatted correctly, please format as [Class letters] [Class number]'
 
         if username_valid == 'Valid' and password_strong == 'Strong' and availability_valid == 'Valid' and supported_subjects_valid == 'Valid':
             #insert values here based on if the user has a middle name
@@ -382,7 +382,7 @@ def picVal (imagePath):
 
 ##validates netID
 def idVal (netID):
-    if not netID[:3].isalpha() or not netID[3:].isnumeric():
+    if not netID[:3].isalpha() or not netID[3:].isnumeric() or len(netID) != 9:
         return "Not a valid NetID. \n"
     return "Valid"
 
@@ -390,23 +390,28 @@ def idVal (netID):
 def subjectVal (subject):
     ##separates the subject at the space character
     sub = subject.split()
-
-    if not sub[0].isalpha() or not sub[1].isnumeric():
-        return "Not a valid subject. \n"
-    return "Valid"
+    if(len(sub) == 2):
+        if not sub[0].isalpha() or not sub[1].isnumeric():
+            return "Not a valid subject. \n"
+        return "Valid"
+    else:
+        return "Not a valid subject, please put a space between class name and number \n"
+    
 
 def timeVal (timeSlot):
     ##separates the timeSlot string at the space characters
     day = timeSlot.split()
 
-    day[1] = day[1].replace("-", ":")
-    time = day[1].split(":")
+    if(len(day) == 2):
+        day[1] = day[1].replace("-", ":")
+        time = day[1].split(":")
 
-    if not day[0].lower() in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
-        return "Not a valid day. \n"
-    ##checks to see if the time is valid
-    if not (int(time[0]) < 25 and int(time[2]) < 25 and int(time[1]) < 60 and int(time[3]) < 60):
-        return "Not a valid time. \n"
-    
-    return "Valid"
-
+        if not day[0].lower() in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+            return "Not a valid day. \n"
+        ##checks to see if the time is valid
+        if not (int(time[0]) < 25 and int(time[2]) < 25 and int(time[1]) < 60 and int(time[3]) < 60):
+            return "Not a valid time. \n"
+        
+        return "Valid"
+    else:
+        return "Not a valid time"
