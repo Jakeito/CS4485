@@ -243,17 +243,21 @@ def insert_user(net_id, passwd, fname, mname, lname, usertype):
 
 
 ##checks to see if the appointment is valid, then calls insertAppointment to add to the database
-@app.route('/api/register-appointment', methods=['POST'])
+@app.route('/api/register-appointment', methods=['GET', 'POST'])
 def appointmentCreation ():
-    timeSlotInfo = request.json
-    timeSlot = timeSlotInfo['day'] + " " + timeSlotInfo['time']
-    timeSlot_status = timeVal(timeSlot)
+    if request.method == 'POST':
+        timeSlotInfo = request.json
+        timeSlot = timeSlotInfo['day'] + " " + timeSlotInfo['time']
+        timeSlot_status = timeVal(timeSlot)
+        available = checkAvailability(timeSlotInfo)
 
-    if timeSlot_status == 'Valid':
-        appointment_status = insertAppointment (timeSlotInfo['session_id'], timeSlotInfo['tutor_id'], timeSlotInfo['student_id'], timeSlotInfo['day'], timeSlotInfo['time'])
-        return appointment_status
-    else:
-        return timeSlot_status
+        if timeSlot_status == 'Valid' and available:
+            appointment_status = insertAppointment (timeSlotInfo['session_id'], timeSlotInfo['tutor_id'], timeSlotInfo['student_id'], timeSlotInfo['day'], timeSlotInfo['time'])
+            return appointment_status
+        elif timeSlot_status != 'Valid':
+            return timeSlot_status
+        else:
+            return "Error, Tutor is not available at that time"
 
 
 ##adds the appointment to the database
@@ -269,6 +273,47 @@ def insertAppointment(session_id, tutor_id, student_id, day, time):
     conn.close()
     return 'Success'
 
+
+##checks if the tutor has an available timeslot, returns a boolean
+def checkAvailability(timeSlotInfo):
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
+    cursor = conn.cursor()
+    time1 = timeFormat(timeSlotInfo['time'])
+    check = False
+
+    try:
+        ##gets the tutors available days
+        cursor.execute("SELECT time FROM TutorAvailability WHERE tutor_id = '%s' AND day = '%s'", (timeSlotInfo['tutor_id'], timeSlotInfo['day']))
+        results = cursor.fetchall()
+
+        if cursor.rowcount == 0:
+            conn.close()
+            return False
+        
+        #checks if the selected time is in the tutors available hours
+        for x in results:
+            time2 = timeFormat(x)
+            if checkTime(time1, time2):
+                availableTime = x
+                check = True
+
+        if check == False:
+            conn.close()
+            return check
+        
+        ##checks to see if an apointment is already schedules in that time slot
+        cursor.execute("SELECT * FROM TutorApts WHERE tutor_id = '%s' AND time = '%s' AND day = '%s'", (timeSlotInfo['tutor_id'], availableTime, timeSlotInfo['day']))
+        results = cursor.fetchall()
+        if cursor.rowcount != 0:
+            conn.close()
+            return False
+
+    except:
+        conn.close()
+        return False
+
+    conn.close()
+    return check
 
 ##checks if the password contains 12 character, upper and lower case character, and a number
 ##returns a boolean and sends a message to front end display
@@ -402,15 +447,50 @@ def subjectVal (subject):
         return "Valid"
     else:
         return "Not a valid subject, please put a space between class name and number \n"
-    
 
+##checks to see if one time value fits in another
+def checkTime (time1, time2):
+    
+    if time1[0] < time2[0] or time1[2] > time2[2]:
+        return False
+    if (time1[0] == time2[0] and time1[1] < time2[1]) or (time1[2] == time2[2] and time1[3] > time2[3]):
+        return False
+    return True
+
+#reformats time from the database to 4 ints, [hour1, minute1, hour2, minute2]. 
+#the rusults will be in 24-hour time to keep am and pm separate
+#ex: 12pm-3pm will become an array [12,0,15,0], for 
+def timeFormat(timeSlot):
+    day = [0,0,0,0]
+    start_time, end_time = timeSlot.split('-')
+
+    #if there are minute values
+    if ":" in timeSlot:
+        start_hour, start_min = [int(val) for val in start_time[:-2].split(':')]
+        end_hour, end_min = [int(val) for val in end_time[:-2].split(':')]
+    #else if there is no minute values
+    else:
+        start_hour = int(start_time[:-2])
+        end_hour = int(end_time[:-2])
+        start_min = 0
+        end_min = 0
+
+    if start_time[-2:] == 'pm' and start_hour != 12:
+        start_hour += 12
+
+    if end_time[-2:] == 'pm' and end_hour != 12:
+        end_hour += 12
+         
+    return [start_hour, start_min, end_hour, end_min]
+
+#validates time and day from a givent imeslot
 def timeVal (timeSlot):
     ##separates the timeSlot string at the space characters
     day = timeSlot.split()
 
     if(len(day) == 2):
-        day[1] = day[1].replace("-", ":")
-        time = day[1].split(":")
+        
+        time = timeFormat(day[1])
 
         if not day[0].lower() in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
             return "Not a valid day. \n"
