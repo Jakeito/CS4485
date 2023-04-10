@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect, session, u
 from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 import json
+import datetime
 import psycopg2
 import hashlib
 import imghdr
@@ -314,6 +315,113 @@ def checkAvailability(timeSlotInfo):
 
     conn.close()
     return check
+
+
+#recieves an ID and returns the user's list of appointments
+def usersAppointments(id):
+    #connect to postgre
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+    cursor = conn.cursor()
+
+    try:
+        #gets a list of appointments, contains the tutor first and last name, student first and last name, time and date
+        cursor.execute("SELECT t.fname AS tutor_fname, t.lname AS tutor_lname, s.fname AS student_fname, s.lname AS student_lname, ta.time, ta.date FROM TutorApts ta INNER JOIN Person t ON ta.tutor_id = t.net_id INNER JOIN Person s ON ta.student_id = s.net_id WHERE ta.tutor_id = '%s' OR ta.student_id = '%s';", (id, id))
+
+        results = cursor.fetchall()
+
+        #if there are no appointments made with that ID
+        if cursor.rowcount == 0:
+            conn.close()
+            return "No appointments with that ID"
+
+        #sorts the results based on date
+        results = sorted(results, key=lambda x: x[-1])
+
+        conn.close()
+        return results
+    
+    except: 
+        conn.close()
+        return "Error, could not find appointments"
+
+#checks to see if an appointment has passed, if it has it removes it and adds it to the user's hours
+def checkPassedAppointments(id):
+    #gets the current date and time when the function is called
+    currentDateTime = datetime.datetime.now()
+    time = currentDateTime.time()
+    date = currentDateTime.date()
+    format = '%Y-%m-%d'
+    format2 = '%H:%M'
+    check = 0
+
+    #connects
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+    cursor = conn.cursor()
+
+    try:
+        #grabs a list of the appointments that contain the id
+        cursor.execute("SELECT * FROM TutorApts WHERE tutor_id = '%s' OR student_id = '%s'", (id, id))
+        reults = cursor.fetchall()
+
+        #if there are no appointments
+        if cursor.rowcount == 0:
+            conn.close()
+            return "No appointments with that ID"
+        
+        #sorts the results based on date (not sorted based on time if there is more than one on a given date)
+        results = sorted(results, key=lambda x: x[-1])
+
+        #goes through every result and sees if it is past the date
+        for x in results:
+            aptDate = datetime.datetime.strptime(x[6], format).date()
+            #if it is before the date
+            if aptDate < date:
+                completedHoursFormat = timeFormat(x[4])
+                completedHours = completedHoursFormat[2] - completedHoursFormat[0]
+
+                #removes the appointment
+                cursor.execute("DELETE FROM TutorApts WHERE date = '%s'", (x[6]))
+                cursor.commit()
+
+                #adds the hours to the student and tutor accounts
+                cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[1]))
+                cursor.commit()
+                cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[2]))
+                cursor.commit()
+                
+                check +=1
+            #if the appointment is today
+            elif aptDate == date:
+                completedHoursFormat = timeFormat(x[4])
+                completedHours = completedHoursFormat[2] - completedHoursFormat[0]
+                timeStr = str(completedHoursFormat[2])+":"+str(completedHoursFormat[3])
+                aptTime = datetime.datetime.strptime(timeStr, format2).time()
+
+                if (aptTime < time):
+                    #removes the appointment
+                    cursor.execute("DELETE FROM TutorApts WHERE date = '%s'", (x[6]))
+                    cursor.commit()
+
+                    #adds the hours to the student and tutor accounts
+                    cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[1]))
+                    cursor.commit()
+                    cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[2]))
+                    cursor.commit()
+                else:
+                    break
+                
+            #if there is no more appointments that have passed
+            else:
+                break
+
+        #returns the amount of appointments removed. will return the string even if it deletes no appointments
+        conn.close()
+        return "Removed " + check + " appointment(s) and added them to completed hours."
+    
+    except: 
+        conn.close()
+        return "Error, could not find appointments"
+
 
 ##checks if the password contains 12 character, upper and lower case character, and a number
 ##returns a boolean and sends a message to front end display
