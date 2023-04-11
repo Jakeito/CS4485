@@ -248,12 +248,12 @@ def insert_user(net_id, passwd, fname, mname, lname, usertype):
 def appointmentCreation ():
     if request.method == 'POST':
         timeSlotInfo = request.json
-        timeSlot = timeSlotInfo['day'] + " " + timeSlotInfo['time']
+        day, timeSlot = timeSlotInfo['tutor-availability'].split(" ")
         timeSlot_status = timeVal(timeSlot)
         available = checkAvailability(timeSlotInfo)
 
         if timeSlot_status == 'Valid' and available:
-            appointment_status = insertAppointment (timeSlotInfo['session_id'], timeSlotInfo['tutor_id'], timeSlotInfo['student_id'], timeSlotInfo['day'], timeSlotInfo['time'])
+            appointment_status = insertAppointment (timeSlotInfo['session_id'], timeSlotInfo['tutor_id'], timeSlotInfo['student_id'], day, timeSlot)
             return appointment_status
         elif timeSlot_status != 'Valid':
             return timeSlot_status
@@ -279,12 +279,12 @@ def insertAppointment(session_id, tutor_id, student_id, day, time):
 def checkAvailability(timeSlotInfo):
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
     cursor = conn.cursor()
-    time1 = timeFormat(timeSlotInfo['time'])
+    day, time1 = timeSlotInfo['tutor-availability'].split(" ")
     check = False
 
     try:
         ##gets the tutors available days
-        cursor.execute("SELECT time FROM TutorAvailability WHERE tutor_id = '%s' AND day = '%s'", (timeSlotInfo['tutor_id'], timeSlotInfo['day']))
+        cursor.execute("SELECT time FROM TutorAvailability WHERE tutor_id = '%s' AND day = '%s'", (timeSlotInfo['tutor_id'], day))
         results = cursor.fetchall()
 
         if cursor.rowcount == 0:
@@ -303,7 +303,7 @@ def checkAvailability(timeSlotInfo):
             return check
         
         ##checks to see if an apointment is already schedules in that time slot
-        cursor.execute("SELECT * FROM TutorApts WHERE tutor_id = '%s' AND time = '%s' AND day = '%s'", (timeSlotInfo['tutor_id'], availableTime, timeSlotInfo['day']))
+        cursor.execute("SELECT * FROM TutorApts WHERE tutor_id = '%s' AND time = '%s' AND day = '%s'", (timeSlotInfo['tutor_id'], availableTime, day))
         results = cursor.fetchall()
         if cursor.rowcount != 0:
             conn.close()
