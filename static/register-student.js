@@ -7,6 +7,11 @@ document.getElementById("about").onclick = function () {
 document.getElementById("suppSubj").onclick = function () {
     location.href = "/suppSubj";
 };
+if (document.getElementById("requestAppointment") !== null) {
+    document.getElementById("requestAppointment").onclick = function () {
+        location.href = "/appointment";
+    };
+}
 if (document.getElementById("signin") !== null) {
     document.getElementById("signin").onclick = function () {
         location.href = "/signin";
@@ -14,7 +19,10 @@ if (document.getElementById("signin") !== null) {
 }
 if (document.getElementById("profile") !== null ) {
     document.getElementById("profile").onclick = function () {
-        location.href = "/profile/";
+        fetch('/api/net-id').then(response=>response.text())
+        .then(data=>{
+            location.href = "/profile/" + data;
+        })
     };
 }
 if (document.getElementById("logout") !== null) {
@@ -28,7 +36,6 @@ document.getElementById("signup-tutor").onclick = function () {
 $(document).ready(function () {
     $('#signup').click(register_student)
 })
-
 
 function register_student() {
     var firstName = $('#input-first-name').val()
