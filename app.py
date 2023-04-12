@@ -28,26 +28,21 @@ def redir():
     return redirect('/home')
 
 @app.route('/home')
-@app.route('/home')
 def home():
     return render_template('home.html')
 
-@app.route('/about')
 @app.route('/about')
 def about():
     return render_template('about.html')
 
 @app.route('/register-student')
-@app.route('/register-student')
 def register_student():
     return render_template('register-student.html')
 
 @app.route('/register-tutor')
-@app.route('/register-tutor')
 def register_tutor():
     return render_template('register-tutor.html')
 
-@app.route('/signin')
 @app.route('/signin')
 def signin():
     return render_template('signin.html')
@@ -73,15 +68,6 @@ def booking():
 def check_netid():
     return session['key']
 
-@app.route('/appointment')
-def appointments():
-    return render_template('appointment.html')
-
-@app.route('/booking')
-def booking():
-    return render_template('booking.html')
-
-"""API ROUTES"""
 @app.route('/api/register-tutor', methods=['POST'])
 def check_response():
     data = request.json
