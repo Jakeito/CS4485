@@ -7,6 +7,11 @@ document.getElementById("about").onclick = function () {
 document.getElementById("suppSubj").onclick = function () {
     location.href = "/suppSubj";
 };
+if (document.getElementById("requestAppointment") !== null) {
+    document.getElementById("requestAppointment").onclick = function () {
+        location.href = "/appointment";
+    };
+}
 if (document.getElementById("signin") !== null) {
     document.getElementById("signin").onclick = function () {
         location.href = "/signin";

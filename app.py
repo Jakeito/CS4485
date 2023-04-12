@@ -21,33 +21,49 @@ app.config['SESSION_TYPE'] = 'filesystem'
 db = SQLAlchemy(app)
 Session(app)
 
-@app.route('/', methods=['GET'])
+"""PAGES"""
+@app.route('/')
 def redir():
     return redirect('/home')
 
-@app.route('/home', methods=['GET'])
+@app.route('/home')
 def home():
     return render_template('home.html')
 
-@app.route('/about', methods=['GET'])
+@app.route('/about')
 def about():
     return render_template('about.html')
 
-@app.route('/register-student', methods=['GET'])
+@app.route('/register-student')
 def register_student():
     return render_template('register-student.html')
 
-@app.route('/register-tutor', methods=['GET'])
+@app.route('/register-tutor')
 def register_tutor():
     return render_template('register-tutor.html')
 
-@app.route('/signin', methods=['GET'])
+@app.route('/signin')
 def signin():
     return render_template('signin.html')
 
-@app.route('/profile/<id>')
-def show_profile(id):
+@app.route('/profile')
+def show_profile():
     return render_template('profile.html') #This page should be able to change based on user (tutor vs student) (jxy123456 vs plt654321)
+
+@app.route('/appointment')
+def appointments():
+    return render_template('appointment.html')
+
+@app.route('/booking')
+def booking():
+    return render_template('booking.html')
+
+"""API ROUTES"""
+@app.route('/api/register-tutor', methods=['POST'])
+def check_response():
+    data = request.json
+    print(data)
+    return data
 
 @app.route('/api/login', methods=['GET', 'POST'])
 def login():
@@ -57,6 +73,8 @@ def login():
         username_input = credentials['net-id']
         password_input = credentials['password']
         hashed = encrypt(password_input)
+        usertype = usertype_check(username_input)
+        print(usertype)
 
         #connect to postgre
         conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
@@ -74,6 +92,7 @@ def login():
             return 'Invalid username or password'
         if results is not None:
             session['key'] = username_input
+            session['usertype'] = usertype
             conn.close()
             return redirect(url_for('home'))
         else:
@@ -96,6 +115,7 @@ def get_favorites(id):
 @app.route('/logout')
 def logout():
     session.pop('key', None)
+    session.pop('usertype', None)
     return redirect('/home')
 
 @app.route('/api/subjects', methods=['GET'])
@@ -412,12 +432,10 @@ def timeVal (timeSlot):
         day[1] = day[1].replace("-", ":")
         time = day[1].split(":")
 
-        if not day[0].lower() in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
-            return "Not a valid day. \n"
-        ##checks to see if the time is valid
-        if not (int(time[0]) < 25 and int(time[2]) < 25 and int(time[1]) < 60 and int(time[3]) < 60):
-            return "Not a valid time. \n"
-        
-        return "Valid"
-    else:
-        return "Not a valid time"
+    if not day[0].lower() in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+        return "Not a valid day. \n"
+    ##checks to see if the time is valid
+    if not (int(time[0]) < 25 and int(time[2]) < 25 and int(time[1]) < 60 and int(time[3]) < 60):
+        return "Not a valid time. \n"
+    
+    return "Valid"
