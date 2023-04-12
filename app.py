@@ -521,6 +521,45 @@ def supported_subjects():
     except:
         conn.close()
         return ("Error in retrieving class list")
+    
+#gets a single tutor's information and sends to frontend
+#mode needs to be specified, the modes being 'subjects', 'availability', and 'about_me'
+def get_tutor_info(net_id, mode):
+    #connect to postgre
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+
+    #creating a cursor object using cursor()
+    cursor = conn.cursor()
+
+    try:
+        #obtain subject list, useful for returning all subjects that a particular tutor teaches
+        if mode == 'subjects':
+            cursor.execute('select classname from SubjectList where tutor_id = \''+ net_id +'\'')
+            class_list = cursor.fetchall()
+            class_list_clean = []
+            for element in class_list:
+                class_list_clean.append(element[0])
+            conn.close()
+            return class_list_clean
+
+        #obtain available hours, returns the day and times a tutor is available
+        if mode == 'availability':
+            cursor.execute('select day, time from tutoravailability where tutor_id = \''+ net_id +'\'')
+            available_hours = cursor.fetchall()
+            conn.close()
+            return available_hours
+
+        #obtain about me, returns the about me section
+        if mode == 'about_me':
+            cursor.execute('select about_me from aboutme where tutor_id = \''+ net_id +'\'')
+            about_me = cursor.fetchone()
+            conn.close()
+            return about_me[0]
+        
+    except:
+        conn.close()
+        return 'Failed to retrieve tutor info'
+
 
 ##returns an encrypted password
 def encrypt(pwd):
