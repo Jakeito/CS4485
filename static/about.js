@@ -19,7 +19,10 @@ if (document.getElementById("signin") !== null) {
 }
 if (document.getElementById("profile") !== null ) {
     document.getElementById("profile").onclick = function () {
-        location.href = "/profile/";
+        fetch('/api/net-id').then(response=>response.text())
+        .then(data=>{
+            location.href = "/profile/" + data;
+        })
     };
 }
 if (document.getElementById("logout") !== null) {
@@ -27,3 +30,4 @@ if (document.getElementById("logout") !== null) {
         location.href = "/logout";
     };
 }
+

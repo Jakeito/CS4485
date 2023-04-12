@@ -62,27 +62,20 @@
 
 
 <body>
-    {% if session['usertype'] == 'student'}
-        {% block student_view %}
-        <div class="row">
-            <div class="col" id="picture">
-                <img src="/static/images/student1.png">
-            </div>
-            <div class="jumbotron" id="tutor-info">
-                <p6>Jane Doe</p6>
-                <p6>MATH, BIO, CHEM, ENGL</p6>
-                <p6>Monday 23:10-23:40</p6>
-            </div>
-            <div class="col">
-                <button id="request" type="button" class="btn btn-primary btn-lg"
-                style="width: 90%; height: 90%;">REQUEST</button>
-            </div>
+    <div class="row">
+        <div class="col" id="picture">
+            <img src="/static/images/student1.png">
         </div>
-        {% endblock student_view %}
-    {% else %}
-        {% block tutor_view %}
-        {% endblock tutor_view %}
-    {% endif %}
+        <div class="jumbotron" id="tutor-info">
+            <p6>Jane Doe</p6>
+            <p6>MATH, BIO, CHEM, ENGL</p6>
+            <p6>Monday 23:10-23:40</p6>
+        </div>
+        <div class="col">
+            <button id="request" type="button" class="btn btn-primary btn-lg"
+            style="width: 90%; height: 90%;">REQUEST</button>
+        </div>
+    </div>
 </body>
 
 <footer>

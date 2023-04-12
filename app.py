@@ -22,7 +22,7 @@ app.config['SESSION_TYPE'] = 'filesystem'
 db = SQLAlchemy(app)
 Session(app)
 
-"""PAGES"""
+'''PAGES'''
 @app.route('/')
 def redir():
     return redirect('/home')
@@ -47,9 +47,13 @@ def register_tutor():
 def signin():
     return render_template('signin.html')
 
-@app.route('/profile')
-def show_profile():
-    return render_template('profile.html') #This page should be able to change based on user (tutor vs student) (jxy123456 vs plt654321)
+@app.route('/profile/<string:subpath>')
+def show_profile(subpath):
+    return render_template('profile.html')
+
+@app.route('/tutor')
+def show_tutor():
+    return render_template('tutor.html')
 
 @app.route('/appointment')
 def appointments():
@@ -59,12 +63,10 @@ def appointments():
 def booking():
     return render_template('booking.html')
 
-"""API ROUTES"""
-@app.route('/api/register-tutor', methods=['POST'])
-def check_response():
-    data = request.json
-    print(data)
-    return data
+'''API ROUTES'''
+@app.route('/api/net-id')
+def check_netid():
+    return session['key']
 
 @app.route('/api/login', methods=['GET', 'POST'])
 def login():
@@ -231,7 +233,67 @@ def add_tutor():
                 frontend_msg += '\n'
                 frontend_msg += supported_subjects_valid
             return frontend_msg
+
+##checks to see if the appointment is valid, then calls insertAppointment to add to the database
+@app.route('/api/register-appointment', methods=['GET', 'POST'])
+def appointmentCreation ():
+    if request.method == 'POST':
+        timeSlotInfo = request.json
+        day, timeSlot = timeSlotInfo['tutor-availability'].split(" ")
+        timeSlot_status = timeVal(timeSlot)
+        available = checkAvailability(timeSlotInfo)
+
+        if timeSlot_status == 'Valid' and available:
+            appointment_status = insertAppointment (timeSlotInfo['session_id'], timeSlotInfo['tutor_id'], timeSlotInfo['student_id'], day, timeSlot)
+            return appointment_status
+        elif timeSlot_status != 'Valid':
+            return timeSlot_status
+        else:
+            return "Error, Tutor is not available at that time"
+
+@app.route('/api/tutor')
+def get_tutor_info():
+    data = request.json
+    mode = data['request']
+    #connect to postgre
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+    cursor = conn.cursor()
+
+    try:
+        if mode == 'list':
+            cursor.execute('select net_id, fname, mname, lname from Person where usertype = \'tutor\'')
+            tutors = cursor.fetchall()
+            print(tutors)
+        elif mode == 'info':
+            cursor.execute('select net_id, fname, mname, lname from Person')
+        if mode == 'subjects':
+            cursor.execute('select classname from SubjectList where tutor_id = \''+ net_id +'\'')
+            class_list = cursor.fetchall()
+            class_list_clean = []
+            for element in class_list:
+                class_list_clean.append(element[0])
+            conn.close()
+            return class_list_clean
+
+        #obtain available hours, returns the day and times a tutor is available
+        if mode == 'availability':
+            cursor.execute('select day, time from tutoravailability where tutor_id = \''+ net_id +'\'')
+            available_hours = cursor.fetchall()
+            conn.close()
+            return available_hours
+
+        #obtain about me, returns the about me section
+        if mode == 'about_me':
+            cursor.execute('select about_me from aboutme where tutor_id = \''+ net_id +'\'')
+            about_me = cursor.fetchone()
+            conn.close()
+            return about_me[0]
+        
+    except:
+        conn.close()
+        return 'Failed to retrieve tutor info'
     
+'''HELPER FUNCTIONS'''
 def insert_user(net_id, passwd, fname, mname, lname, usertype):
     #connect to postgre
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
@@ -262,25 +324,6 @@ def insert_user(net_id, passwd, fname, mname, lname, usertype):
     conn.close()
     return 'Valid'
 
-
-##checks to see if the appointment is valid, then calls insertAppointment to add to the database
-@app.route('/api/register-appointment', methods=['GET', 'POST'])
-def appointmentCreation ():
-    if request.method == 'POST':
-        timeSlotInfo = request.json
-        day, timeSlot = timeSlotInfo['tutor-availability'].split(" ")
-        timeSlot_status = timeVal(timeSlot)
-        available = checkAvailability(timeSlotInfo)
-
-        if timeSlot_status == 'Valid' and available:
-            appointment_status = insertAppointment (timeSlotInfo['session_id'], timeSlotInfo['tutor_id'], timeSlotInfo['student_id'], day, timeSlot)
-            return appointment_status
-        elif timeSlot_status != 'Valid':
-            return timeSlot_status
-        else:
-            return "Error, Tutor is not available at that time"
-
-
 ##adds the appointment to the database
 def insertAppointment(session_id, tutor_id, student_id, day, time):
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
@@ -293,7 +336,6 @@ def insertAppointment(session_id, tutor_id, student_id, day, time):
         return ("Error, appointment could not be created")
     conn.close()
     return 'Success'
-
 
 ##checks if the tutor has an available timeslot, returns a boolean
 def checkAvailability(timeSlotInfo):
@@ -335,7 +377,6 @@ def checkAvailability(timeSlotInfo):
 
     conn.close()
     return check
-
 
 #recieves an ID and returns the user's list of appointments
 def usersAppointments(id):
@@ -442,7 +483,6 @@ def checkPassedAppointments(id):
         conn.close()
         return "Error, could not find appointments"
 
-
 ##checks if the password contains 12 character, upper and lower case character, and a number
 ##returns a boolean and sends a message to front end display
 def strongPWD(pwd):
@@ -541,55 +581,12 @@ def supported_subjects():
     except:
         conn.close()
         return ("Error in retrieving class list")
-    
-#gets a single tutor's information and sends to frontend
-#mode needs to be specified, the modes being 'subjects', 'availability', and 'about_me'
-def get_tutor_info(net_id, mode):
-    #connect to postgre
-    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
-
-    #creating a cursor object using cursor()
-    cursor = conn.cursor()
-
-    try:
-        #obtain subject list, useful for returning all subjects that a particular tutor teaches
-        if mode == 'subjects':
-            cursor.execute('select classname from SubjectList where tutor_id = \''+ net_id +'\'')
-            class_list = cursor.fetchall()
-            class_list_clean = []
-            for element in class_list:
-                class_list_clean.append(element[0])
-            conn.close()
-            return class_list_clean
-
-        #obtain available hours, returns the day and times a tutor is available
-        if mode == 'availability':
-            cursor.execute('select day, time from tutoravailability where tutor_id = \''+ net_id +'\'')
-            available_hours = cursor.fetchall()
-            conn.close()
-            return available_hours
-
-        #obtain about me, returns the about me section
-        if mode == 'about_me':
-            cursor.execute('select about_me from aboutme where tutor_id = \''+ net_id +'\'')
-            about_me = cursor.fetchone()
-            conn.close()
-            return about_me[0]
-        
-    except:
-        conn.close()
-        return 'Failed to retrieve tutor info'
-
 
 ##returns an encrypted password
 def encrypt(pwd):
     newPwd = hashlib.sha256(pwd.encode())
     newPwd = newPwd.hexdigest()
     return newPwd
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
 
 ##checks to see if the file is PNG JPEG JPG  
 def picVal (imagePath):
@@ -666,3 +663,17 @@ def timeVal (timeSlot):
         return "Not a valid time. \n"
     
     return "Valid"
+
+def usertype_check(net_id):
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+    cursor = conn.cursor()
+    try:
+        #gets a list of appointments, contains the tutor first and last name, student first and last name, time and date
+        cursor.execute(f"select usertype from Person where net_id = '{net_id}'")
+        results = cursor.fetchone()
+        return results[0]
+    except Exception as e:
+        print(e)
+
+if __name__ == '__main__':
+    app.run(debug=True)
