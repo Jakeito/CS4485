@@ -83,3 +83,10 @@ values ('mno180000', 'abc180000'),
 ('vwx180000', 'jkl180000'),
 ('yza180000', 'abc180000');
 --done
+
+insert into aboutme (tutor_id, about_me)
+values ('abc180000', null),
+('def180000', null),
+('ghi180000', null),
+('jkl180000', null);
+--done
