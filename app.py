@@ -734,13 +734,13 @@ def checkTime (time1, time2):
 #the rusults will be in 24-hour time to keep am and pm separate
 #ex: 12pm-3pm will become an array [12,0,15,0], for 
 def timeFormat(timeSlot):
-    day = [0,0,0,0]
+    
     start_time, end_time = timeSlot.split('-')
 
     #if there are minute values
     if ":" in timeSlot:
-        start_hour, start_min = [int(val) for val in start_time[:-2].split(':')]
-        end_hour, end_min = [int(val) for val in end_time[:-2].split(':')]
+        start_hour, start_min = [val for val in start_time[:-2].split(':')]
+        end_hour, end_min = [val for val in end_time[:-2].split(':')]
     #else if there is no minute values
     else:
         start_hour = int(start_time[:-2])
@@ -748,13 +748,21 @@ def timeFormat(timeSlot):
         start_min = 0
         end_min = 0
 
+    start_hour = int(start_hour)
+    end_hour = int(end_hour)
+
     if start_time[-2:] == 'pm' and start_hour != 12:
         start_hour += 12
 
     if end_time[-2:] == 'pm' and end_hour != 12:
         end_hour += 12
+
+    if start_min == '':
+        start_min = 0
+    if end_min == '':
+        end_min = 0
          
-    return [start_hour, start_min, end_hour, end_min]
+    return [int(start_hour), int(start_min), int(end_hour), int(end_min)]
 
 #validates time and day from a givent imeslot
 def timeVal (timeSlot):
