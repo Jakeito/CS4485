@@ -517,31 +517,24 @@ def strongPWD(pwd):
 def insert_tutor_info(net_id, availability, supported_subjects, about_me):
     #connect to postgre
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
-
     #creating a cursor object using cursor()
     cursor = conn.cursor()
-
-    #tempcode for confirming a connection
-    cursor.execute('select version()')
-
-    #fetch a single row using fetchone. method fetchmany and fetchall can be used depending on query, this is just verifying db connection
-    connectCheck = cursor.fetchone()
-    print('Connection established to: ', connectCheck)
-
     #try catch will fail if the insert fails, returning an error message
     try:
         #insert availability into availability table, input is a string with input separated by newlines
         availability_array = availability.split('\n')
+        #print(availability_array)
         
         for x in availability_array:
             #making sure to cull accidental newlines
+            print(x)
             if x != '':
                 #each availability entry in the array/list is stored as "[day] [time]", and needs to be split further via its space
                 day_time_split = x.split()
 
                 #insert each date and time entry
-                cursor.execute('insert into TutorAvailabiltiy (tutor_id, day, time) values (\''+ net_id +'\',\''+ day_time_split[0] +'\',\'' + day_time_split[1] + '\')')
-                cursor.commit()
+                cursor.execute("insert into tutoravailability (tutor_id, day, time) values (\'"+net_id+"\', \'"+day_time_split[0]+"\', \'"+day_time_split[1]+"\')")
+                conn.commit()
 
         #insert supported subjects into supported subjects table, input is a string with input separated by newlines
         supported_subjects_array = supported_subjects.split('\n')
@@ -550,11 +543,12 @@ def insert_tutor_info(net_id, availability, supported_subjects, about_me):
             if input != '':
                 #insert each subject entry
                 cursor.execute('insert into SubjectList (tutor_id, classname) values (\''+ net_id +'\',\''+ input +'\')')
+                conn.commit()
         
 
         #insert about me into table
         cursor.execute('insert into AboutMe(tutor_id, about_me) values (\''+ net_id + '\', \''+ about_me +'\')')
-        cursor.commit()
+        conn.commit()
 
     except:
         return ("Error in inserting tutor information")
@@ -588,6 +582,115 @@ def supported_subjects():
         conn.close()
         return ("Error in retrieving class list")
 
+
+@app.route('/api/tutor')
+def get_tutor_info():
+    data = request.json
+    mode = data['request']
+    net_id = data['net-id']
+    #connect to postgre
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+    cursor = conn.cursor()
+
+    try:
+        #mode 1, list all tutors
+        if mode == 'list':
+            cursor.execute('select net_id, fname, mname, lname from Tutors')
+            tutors = cursor.fetchall()
+            #building a dict to return to frontend
+            tutor_dict_array = []
+            for x in tutors:
+                temp_dict = {
+                    'net-id': x[0],
+                    'first-name': x[1],
+                    'middle-name': x[2],
+                    'last-name': x[3]
+                }
+                tutor_dict_array.append(temp_dict)
+            conn.close()
+            return tutor_dict_array
+        #mode 2, list a single tutor's information
+        elif mode == 'info':
+            #get tutor full name
+            cursor.execute('select net_id, fname, mname, lname from Tutors where net_id = \'' + net_id + '\'')
+            tutor_personal_info = cursor.fetchone()
+            tutor_dict = {
+                'net-id': tutor_personal_info[0],
+                'first-name': tutor_personal_info[1],
+                'middle-name': tutor_personal_info[2],
+                'last-name': tutor_personal_info[3]
+            }
+
+            #get tutor subjects
+            cursor.execute('select classname from SubjectList where tutor_id = \''+ net_id +'\'')
+            class_list = cursor.fetchall()
+            class_list_clean = []
+            for element in class_list:
+                class_list_clean.append(element[0])
+            tutor_dict.update({'subjects': class_list_clean})
+
+            #get tutor availability
+            cursor.execute('select day, time from tutoravailability where tutor_id = \''+ net_id +'\'')
+            available_hours = cursor.fetchall()
+            tutor_dict.update({'availability': available_hours})
+
+            #get about me
+            cursor.execute('select about_me from aboutme where tutor_id = \''+ net_id +'\'')
+            about_me = cursor.fetchone()
+            tutor_dict.update({'about-me': about_me[0]})
+
+            conn.close()
+            return tutor_dict
+
+        #mode 3, query for all tutor information
+        elif mode == 'all-info':
+            #setting up the dict array
+            all_info_dict_array = []
+            #first, get list of all tutors
+            cursor.execute('select net_id from Tutors')
+            tutors = cursor.fetchall()
+            #contains the array of only tutor net IDs
+            tutor_list_clean = []
+            for element in tutors:
+                tutor_list_clean.append(element[0])
+            #iterate through the list of tutors, dict their info, and append to dict array
+            for tutor in tutor_list_clean:
+                #get tutor full name
+                cursor.execute('select net_id, fname, mname, lname from Tutors where net_id = \'' + tutor + '\'')
+                tutor_personal_info = cursor.fetchone()
+                tutor_dict = {
+                    'net-id': tutor_personal_info[0],
+                    'first-name': tutor_personal_info[1],
+                    'middle-name': tutor_personal_info[2],
+                    'last-name': tutor_personal_info[3]
+                }
+
+                #get tutor subjects
+                cursor.execute('select classname from SubjectList where tutor_id = \''+ tutor +'\'')
+                class_list = cursor.fetchall()
+                class_list_clean = []
+                for element in class_list:
+                    class_list_clean.append(element[0])
+                tutor_dict.update({'subjects': class_list_clean})
+
+                #get tutor availability
+                cursor.execute('select day, time from tutoravailability where tutor_id = \''+ tutor +'\'')
+                available_hours = cursor.fetchall()
+                tutor_dict.update({'availability': available_hours})
+
+                #get about me
+                cursor.execute('select about_me from aboutme where tutor_id = \''+ tutor +'\'')
+                about_me = cursor.fetchone()
+                tutor_dict.update({'about-me': about_me[0]})
+
+                all_info_dict_array.append(tutor_dict)
+            
+            conn.close()
+            return all_info_dict_array 
+    except:
+        conn.close()
+        return 'Failed to retrieve tutor info'
+        
 ##returns an encrypted password
 def encrypt(pwd):
     newPwd = hashlib.sha256(pwd.encode())
@@ -658,16 +761,14 @@ def timeVal (timeSlot):
     ##separates the timeSlot string at the space characters
     day = timeSlot.split()
 
-    if(len(day) == 2):
-        
-        time = timeFormat(day[1])
+    day[1] = day[1].replace("-", ":")
+    time = day[1].split(":")
 
     if not day[0].lower() in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
         return "Not a valid day. \n"
     ##checks to see if the time is valid
     if not (int(time[0]) < 25 and int(time[2]) < 25 and int(time[1]) < 60 and int(time[3]) < 60):
         return "Not a valid time. \n"
-    
     return "Valid"
 
 def usertype_check(net_id):
