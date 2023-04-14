@@ -51,7 +51,7 @@ function register_tutor() {
     pictureFile.append('file', picture.files[0]);
 
     console.log(netID + '\n' + password)
-    const response = fetch('/api/register-tutor', {
+    fetch('/api/register-tutor', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -67,9 +67,17 @@ function register_tutor() {
             'availability': availability,
             'user-type': 'tutor'
         })
-    })
+    }).then(response=>response.text())
+    .then(data=>{
+        if (data !== 'Valid') {
+            alert(data);
+        }
+        else {
+            window.location.href = '/home';
+        }
+    });
 
-    fetch(`/api/tutor-picture?net-id=${netID}`, {
+    fetch('/api/tutor-picture?net-id=${netID}', {
         method: 'POST',
         body: pictureFile
     }).then(response=>response.text())

@@ -137,6 +137,7 @@ def get_all_subjects():
 
     return class_table_clean
 
+@app.route('/api/tutor-picture', methods=['POST'])
 def add_pic():
     net_id = request.args.get('net-id')
     try:
@@ -148,13 +149,15 @@ def add_pic():
             print('no file')
             return 'failed'
         filename = secure_filename(pic.filename)
+        if not filename.endswith('png') or not filename.endswith('jpeg') or not filename.endswith('jpg'):
+            return 'Wrong file extension'
         path = app.config['UPLOAD_FOLDER'] + net_id
         if not os.path.exists(path):
             os.makedirs(path)
         pic.save(os.path.join(app.config['UPLOAD_FOLDER'] + net_id + '/', filename))
     except Exception as e:
         print(e)
-    return
+    return 'Valid'
 
 #this register deals with registering a student
 @app.route('/api/register-student', methods=['POST'])
