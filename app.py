@@ -87,7 +87,7 @@ def login():
     
         try:
             #inserting data into DB
-            cursor.execute(f"select net_id from login where hashed_pw = '{password_input}'") #CHANGE THIS TO HASHED WHEN WE START STORING HASHED
+            cursor.execute(f"select net_id from login where hashed_pw = '{hashed}'")
             results = cursor.fetchone()
         except Exception as e:
             print(e)
