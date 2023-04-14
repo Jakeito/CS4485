@@ -10,8 +10,11 @@ values ('abc180000', 'Alvin','Ben', 'Carter', 0, 'tutor'),
 ('yza180000', 'Yin','Zhuge', 'Anderdson', 999, 'student');
 --done
 
-insert into Login (net_id, hashed_pw)
+insert into Person (net_id, fname, mname, lname, hours_completed, usertype)
+values ('axc180000', 'Albert','', 'Carey', 0, 'tutor');
+
 --example values here will be simple passwords for testing, no actual passwords should be stored, only hashes
+insert into Login (net_id, hashed_pw)
 values ('abc180000', '1234'),
 ('def180000', 'apples'),
 ('ghi180000', '1234apples'),
@@ -44,7 +47,8 @@ values ('abc180000', 'Discrete Math'),
 ('ghi180000', 'Statistics'),
 ('jkl180000', 'Biology 2'),
 ('jkl180000', 'Discrete Math 2'),
-('jkl180000', 'Integral Calculus');
+('jkl180000', 'Integral Calculus'),
+('axc180000', 'CS1200');
 --done
 
 insert into TutorAvailability (tutor_id, day, time)
@@ -67,7 +71,8 @@ values ('abc180000', 'Monday', '9am-12pm'),
 ('jkl180000', 'Tueday', '9:30am-1pm'),
 ('jkl180000', 'Wednesday', '10am-1:30pm'),
 ('jkl180000', 'Thursday', '10:30am-2pm'),
-('jkl180000', 'Friday', '11am-2:30pm');
+('jkl180000', 'Friday', '11am-2:30pm'),
+('axc180000', 'Monday', '5pm-7pm');
 --done
 
 insert into FavoriteTutors (student_id, tutor_id)
@@ -88,5 +93,6 @@ insert into aboutme (tutor_id, about_me)
 values ('abc180000', null),
 ('def180000', null),
 ('ghi180000', null),
-('jkl180000', null);
---done
+('jkl180000', null),
+('axc180000', null);
+--done;
