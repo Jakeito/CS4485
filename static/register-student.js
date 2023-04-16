@@ -45,27 +45,27 @@ function register_student() {
     var password = $('#input-password').val()
     console.log(netID + '\n' + password)
     if (firstName !== '' && lastName !== '' && netID !== '' && password !== ''){
-    fetch('/api/register-student', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            'first-name': firstName,
-            'middle-name': middleName,
-            'last-name': lastName,
-            'net-id': netID,
-            'password': password,
-            'user-type': 'student'
-        })
-    }).then(response=>response.text())
-    .then(data=>{
-        if (data !== 'Valid') {
-            alert(data);
-        }
-        else {
-            window.location.href = '/home';
-        }
-    });
-}
+        fetch('/api/register-student', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                'first-name': firstName,
+                'middle-name': middleName,
+                'last-name': lastName,
+                'net-id': netID,
+                'password': password,
+                'user-type': 'student'
+            })
+        }).then(response=>response.text())
+        .then(data=>{
+            if (data !== 'Valid') {
+                alert(data);
+            }
+            else {
+                window.location.href = '/home';
+            }
+        });
+    }
 }
