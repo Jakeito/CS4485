@@ -47,46 +47,49 @@ function register_tutor() {
     var picture = document.querySelector('input[type="file"]')
     var supportSubjects = $('#tutor-supported-subjects').val();
     var availability = $('#tutor-availability').val();
-    var pictureFile = new FormData();
-    pictureFile.append('file', picture.files[0]);
+    //var pictureFile = new FormData();
+    //pictureFile.append('file', picture.files[0]);
 
     console.log(netID + '\n' + password)
-    fetch('/api/register-tutor', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            'first-name': firstName,
-            'middle-name': middleName,
-            'last-name': lastName,
-            'net-id': netID,
-            'password': password,
-            'about-me': aboutMe,
-            'support-subjects': supportSubjects,
-            'availability': availability,
-            'user-type': 'tutor'
-        })
-    }).then(response=>response.text())
-    .then(data=>{
-        if (data !== 'Valid') {
-            alert(data);
-        }
-        else {
-            window.location.href = '/home';
-        }
-    });
-
-    fetch('/api/tutor-picture?net-id=${netID}', {
-        method: 'POST',
-        body: pictureFile
-    }).then(response=>response.text())
-    .then(data=>{
-        if (data !== 'Valid') {
-            alert(data);
-        }
-        else {
-            window.location.href = '/home';
-        }
-    });
+    if (firstName !== '' && lastName !== '' && netID !== '' && password !== '' && aboutMe !== '' && supportSubjects !== '' && availability !== ''){
+        fetch('/api/register-tutor', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                'first-name': firstName,
+                'middle-name': middleName,
+                'last-name': lastName,
+                'net-id': netID,
+                'password': password,
+                'about-me': aboutMe,
+                'support-subjects': supportSubjects,
+                'availability': availability,
+                'user-type': 'tutor'
+            })
+        }).then(response=>response.text())
+        .then(data=>{
+            if (data !== 'Valid') {
+                alert(data);
+            }
+            else {
+                window.location.href = '/home';
+            }
+        });
+    /*
+        fetch('/api/tutor-picture?net-id=${netID}', {
+            method: 'POST',
+            body: pictureFile
+        }).then(response=>response.text())
+        .then(data=>{
+            if (data !== 'Valid') {
+                alert(data);
+            }
+            else {
+                window.location.href = '/home';
+            }
+        });
+        */
+    }
 }

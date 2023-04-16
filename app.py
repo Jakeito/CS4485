@@ -160,7 +160,9 @@ def add_student():
     if request.method == 'POST':
         user_info = request.json
         #check username and pwd input input
+        print(user_info['net-id'])
         username_valid = idVal(user_info['net-id'])
+        print(username_valid)
         password_strong = strongPWD(user_info['password'])
         frontend_msg = ''
 
@@ -183,6 +185,7 @@ def add_student():
                 frontend_msg += '\n'
             if password_strong != 'Strong':
                 frontend_msg += password_strong
+            print (frontend_msg)
             return frontend_msg
 
 #this register deals with registering a tutor
@@ -222,7 +225,7 @@ def add_tutor():
                 insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'].lower())
 
             insert_tutor_info(user_info['net-id'], user_info['availability'], user_info['support-subjects'], user_info['about-me'])
-            return 'Valid'
+            return insert_status
         else:
             if username_valid != 'Valid':
                 frontend_msg += username_valid
