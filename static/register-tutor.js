@@ -47,8 +47,8 @@ function register_tutor() {
     var picture = document.querySelector('input[type="file"]')
     var supportSubjects = $('#tutor-supported-subjects').val();
     var availability = $('#tutor-availability').val();
-    //var pictureFile = new FormData();
-    //pictureFile.append('file', picture.files[0]);
+    var pictureFile = new FormData();
+    pictureFile.append('file', picture.files[0]);
 
     console.log(netID + '\n' + password)
     if (firstName !== '' && lastName !== '' && netID !== '' && password !== '' && aboutMe !== '' && supportSubjects !== '' && availability !== ''){
