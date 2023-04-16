@@ -51,6 +51,7 @@ function register_tutor() {
     pictureFile.append('file', picture.files[0]);
 
     console.log(netID + '\n' + password)
+    if (firstName !== '' && lastName !== '' && netID !== '' && password !== '' && aboutMe !== '' && supportSubjects !== '' && availability !== ''){
     fetch('/api/register-tutor', {
         method: 'POST',
         headers: {
@@ -77,7 +78,7 @@ function register_tutor() {
         }
     });
 
-    fetch('/api/tutor-picture?net-id=${netID}', {
+    fetch(`/api/tutor-picture?net-id=${netID}`, {
         method: 'POST',
         body: pictureFile
     }).then(response=>response.text())
@@ -89,4 +90,5 @@ function register_tutor() {
             window.location.href = '/home';
         }
     });
+}
 }
