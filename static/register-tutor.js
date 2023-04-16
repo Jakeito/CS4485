@@ -77,7 +77,7 @@ function register_tutor() {
                 window.location.href = '/home';
             }
         });
-    /*
+
         fetch('/api/tutor-picture?net-id=${netID}', {
             method: 'POST',
             body: pictureFile
@@ -90,6 +90,6 @@ function register_tutor() {
                 window.location.href = '/home';
             }
         });
-        */
+        
     }
 }

@@ -60,7 +60,6 @@ function register_student() {
             })
         }).then(response=>response.text())
         .then(data=>{
-            console.log(data)
             if (data !== 'Valid') {
                 alert(data);
             }
