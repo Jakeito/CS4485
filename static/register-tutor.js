@@ -90,6 +90,5 @@ function register_tutor() {
                 window.location.href = '/home';
             }
         });
-        
     }
 }
