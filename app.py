@@ -222,7 +222,7 @@ def add_tutor():
                 insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'].lower())
 
             insert_tutor_info(user_info['net-id'], user_info['availability'], user_info['support-subjects'], user_info['about-me'])
-            return 'Valid'
+            return insert_status
         else:
             if username_valid != 'Valid':
                 frontend_msg += username_valid
@@ -256,9 +256,10 @@ def appointmentCreation ():
         
 @app.route('/api/tutor')
 def get_tutor_info():
-    data = request.json
-    mode = data['request']
-    net_id = data['net-id']
+    #data = request.json
+    #mode = data['request']
+    #net_id = data['net-id']
+    mode = 'all-info'
     #connect to postgre
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
     cursor = conn.cursor()
@@ -357,9 +358,11 @@ def get_tutor_info():
                 all_info_dict_array.append(tutor_dict)
             
             conn.close()
-            return all_info_dict_array 
+            print(all_info_dict_array)
+            return all_info_dict_array
     except:
         conn.close()
+        print('hello')
         return 'Failed to retrieve tutor info'
     
 '''HELPER FUNCTIONS'''

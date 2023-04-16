@@ -44,6 +44,7 @@ function register_student() {
     var netID = $('#input-net-id').val()
     var password = $('#input-password').val()
     console.log(netID + '\n' + password)
+    if (firstName !== '' && lastName !== '' && netID !== '' && password !== ''){
     fetch('/api/register-student', {
         method: 'POST',
         headers: {
@@ -66,4 +67,5 @@ function register_student() {
             window.location.href = '/home';
         }
     });
+}
 }
