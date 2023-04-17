@@ -254,6 +254,7 @@ def appointmentCreation ():
         else:
             return "Error, Tutor is not available at that time"
         
+#this route deals with returning relevant tutor information based on mode        
 @app.route('/api/tutor')
 def get_tutor_info():
     data = request.json
@@ -362,6 +363,48 @@ def get_tutor_info():
     except:
         conn.close()
         return 'Failed to retrieve tutor info'
+    
+@app.route('/api/add-favorite-tutor')
+def add_favorite_tutor():
+    data = request.json
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+    cursor = conn.cursor()
+
+    #get student id
+    student_id = session['key']
+    tutor_id = data['tutor_id']
+    #check for login session, if not logged in don't add to favorites
+    try:
+        if student_id != '':
+            cursor.execute('insert into FavoriteTutors (student_id, tutor_id) values (%s, %s)', (student_id, tutor_id))
+            conn.commit()
+            conn.close()
+            return 'Success'
+    except Exception as e:
+        conn.close()
+        return 'Error adding to favorite' + repr(e)
+    
+@app.route('/api/remove-favorite-tutor')
+def remove_favorite_tutor():
+    data = request.json
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+    cursor = conn.cursor()
+
+    #get student id
+    student_id = session['key']
+    tutor_id = data['tutor_id']
+    #check for login session, if not logged in don't remove from favorites
+    try:
+        if student_id != '':
+            cursor.execute('delete from FavoriteTutors where student_id = %s and tutor_id = %s', (student_id, tutor_id))
+            conn.commit()
+            conn.close()
+            return 'Success'
+    except Exception as e:
+        conn.close()
+        return 'Error removing from favorites' + repr(e)
+
+
     
 '''HELPER FUNCTIONS'''
 def insert_user(net_id, passwd, fname, mname, lname, usertype):
