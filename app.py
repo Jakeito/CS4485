@@ -256,10 +256,9 @@ def appointmentCreation ():
         
 @app.route('/api/tutor')
 def get_tutor_info():
-    #data = request.json
-    #mode = data['request']
-    #net_id = data['net-id']
-    mode = 'all-info'
+    data = request.json
+    mode = data['request']
+    net_id = data['net-id']
     #connect to postgre
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
     cursor = conn.cursor()
@@ -362,7 +361,6 @@ def get_tutor_info():
             return all_info_dict_array
     except:
         conn.close()
-        print('hello')
         return 'Failed to retrieve tutor info'
     
 '''HELPER FUNCTIONS'''
