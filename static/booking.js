@@ -33,7 +33,7 @@ if (document.getElementById("logout") !== null) {
 
 if (document.getElementById("submit") !== null) {
     document.getElementById("submit").onclick = function () {
-        const dateTime = flatpickr("#meeting-date-time", {});
+        const dateTime = flatpickr(document.getElementById("meeting-date-time"), {"time_24hr":true});
         console.log(dateTime.selectedDates);
     };
 }
