@@ -250,13 +250,15 @@ def add_tutor():
             return frontend_msg
 
 ##checks to see if the appointment is valid, then calls insertAppointment to add to the database
+#recieves an appointmentTime, formatted as a string ex. "Monday 11am-3pm"
 @app.route('/api/register-appointment', methods=['GET', 'POST'])
-def appointmentCreation ():
+def appointmentCreation (appointmentTime):
     if request.method == 'POST':
         timeSlotInfo = request.json
-        day, timeSlot = timeSlotInfo['tutor-availability'].split(" ")
+        day, timeSlot = appointmentTime.split(" ")
+        
         timeSlot_status = timeVal(timeSlot)
-        available = checkAvailability(timeSlotInfo)
+        available = checkAvailability(timeSlotInfo, day, timeSlot)
 
         if timeSlot_status == 'Valid' and available:
             appointment_status = insertAppointment (timeSlotInfo['session_id'], timeSlotInfo['tutor_id'], timeSlotInfo['student_id'], day, timeSlot)
@@ -622,10 +624,9 @@ def insertAppointment(session_id, tutor_id, student_id, day, time):
     return 'Success'
 
 ##checks if the tutor has an available timeslot, returns a boolean
-def checkAvailability(timeSlotInfo):
+def checkAvailability(timeSlotInfo, day, timeSlot):
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
     cursor = conn.cursor()
-    day, time1 = timeSlotInfo['tutor-availability'].split(" ")
     check = False
 
     try:
@@ -640,7 +641,7 @@ def checkAvailability(timeSlotInfo):
         #checks if the selected time is in the tutors available hours
         for x in results:
             time2 = timeFormat(x)
-            if checkTime(time1, time2):
+            if checkTime(timeSlot, time2):
                 availableTime = x
                 check = True
 
