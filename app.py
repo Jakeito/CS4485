@@ -269,10 +269,9 @@ def appointmentCreation ():
 #this route deals with returning relevant tutor information based on mode        
 @app.route('/api/tutors', methods=['GET'])
 def get_tutor_info():
-    #data = request.json
-    #mode = data['request']
-    #net_id = data['net-id']
-    mode = 'all-info'
+    data = request.json
+    mode = data['request']
+    net_id = data['net-id']
     #connect to postgre
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
     cursor = conn.cursor()
