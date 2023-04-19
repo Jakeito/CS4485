@@ -13,13 +13,8 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'tutors/'
-
-# using SQLAlchemy to connect to a POstgreSQL database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:1234@localhost/Tutoring'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'mysecretkey'
 app.config['SESSION_TYPE'] = 'filesystem'
-db = SQLAlchemy(app)
 Session(app)
 
 '''PAGES'''
@@ -68,6 +63,10 @@ def booking():
 def check_netid():
     return session['key']
 
+@app.route('/api/user-type')
+def check_usertype():
+    return session['usertype']
+
 @app.route('/api/login', methods=['GET', 'POST'])
 def login():
     if request.method =='POST':
@@ -77,8 +76,7 @@ def login():
         password_input = credentials['password']
         hashed = encrypt(password_input)
         usertype = usertype_check(username_input)
-        print(usertype)
-
+        print(hashed)
         #connect to postgre
         conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
 
@@ -102,18 +100,32 @@ def login():
             return 'Invalid username or password'
 
 #Backend10: respond to API call to send back a query for the user's fav list from the database
-@app.route('/favorites/<int:id>', methods=['GET'])
-def get_favorites(id):
+@app.route('/api/favorite', methods=['GET'])
+def get_favorites():
+    # get id
+    id = session['key']
+
     # Execute a SELECT statement to retrieve the user's fav list from the database
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
     cursor = conn.cursor() 
-    cursor.execute("SELECT * FROM FavoriteTutors WHERE id = %s", (id,))
+    cursor.execute(f"SELECT tutor_id FROM FavoriteTutors WHERE student_id = '{id}'")
 
     # Fetch the results and store them in results
-    results = cursor.fetchall()
-    conn.close()
+    tutors = cursor.fetchall()
+    results = []
+    for i in tutors:
+        cursor.execute(f"SELECT fname, mname, lname, net_id FROM Person WHERE net_id = '{i[0]}'")
+        result = cursor.fetchone()
+        favorite_dict = {
+            'net-id': result[3],
+            'fname': result[0],
+            'mname': result[1],
+            'lname': result[2],
+        }
+        results.append(favorite_dict)
+    conn.close()    
     # Return the results as JSON response
-    return jsonify(results)
+    return results
 
 @app.route('/logout')
 def logout():
@@ -255,11 +267,12 @@ def appointmentCreation ():
             return "Error, Tutor is not available at that time"
         
 #this route deals with returning relevant tutor information based on mode        
-@app.route('/api/tutor', methods=['GET'])
+@app.route('/api/tutors', methods=['GET'])
 def get_tutor_info():
-    data = request.json
-    mode = data['request']
-    net_id = data['net-id']
+    #data = request.json
+    #mode = data['request']
+    #net_id = data['net-id']
+    mode = 'all-info'
     #connect to postgre
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
     cursor = conn.cursor()
@@ -358,7 +371,6 @@ def get_tutor_info():
                 all_info_dict_array.append(tutor_dict)
             
             conn.close()
-            print(all_info_dict_array)
             return all_info_dict_array
     except:
         conn.close()
@@ -405,9 +417,167 @@ def remove_favorite_tutor():
     except Exception as e:
         conn.close()
         return 'Error removing from favorites' + repr(e)
-
-
     
+#recieves an ID and returns the user's list of appointments
+@app.route('/api/get-appointments')
+def usersAppointments():
+    #get id
+    id = session['key']
+
+    #connect to postgre
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+    cursor = conn.cursor()
+
+    try:
+        #gets a list of appointments, contains the tutor first and last name, student first and last name, time and date
+        cursor.execute("SELECT t.fname AS tutor_fname, t.lname AS tutor_lname, s.fname AS student_fname, s.lname AS student_lname, ta.time, ta.date FROM TutorApts ta INNER JOIN Person t ON ta.tutor_id = t.net_id INNER JOIN Person s ON ta.student_id = s.net_id WHERE ta.tutor_id = '%s' OR ta.student_id = '%s';", (id, id))
+
+        results = cursor.fetchall()
+
+        #if there are no appointments made with that ID
+        if cursor.rowcount == 0:
+            conn.close()
+            return "No appointments with that ID"
+
+        #sorts the results based on date
+        results = sorted(results, key=lambda x: x[-1])
+
+        conn.close()
+        return results
+    
+    except: 
+        conn.close()
+        return "Error, could not find appointments"
+
+#checks to see if an appointment has passed, if it has it removes it and adds it to the user's hours
+@app.route('/api/check-appointment', methods=['POST'])
+def checkPassedAppointments():
+    #get id
+    id = session['key']
+
+    #gets the current date and time when the function is called
+    currentDateTime = datetime.datetime.now()
+    time = currentDateTime.time()
+    date = currentDateTime.date()
+    format = '%Y-%m-%d'
+    format2 = '%H:%M'
+    check = 0
+
+    #connects
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+    cursor = conn.cursor()
+
+    try:
+        #grabs a list of the appointments that contain the id
+        cursor.execute("SELECT * FROM TutorApts WHERE tutor_id = '%s' OR student_id = '%s'", (id, id))
+        results = cursor.fetchall()
+
+        #if there are no appointments
+        if cursor.rowcount == 0:
+            conn.close()
+            return "No appointments with that ID"
+        
+        #sorts the results based on date (not sorted based on time if there is more than one on a given date)
+        results = sorted(results, key=lambda x: x[-1])
+
+        #goes through every result and sees if it is past the date
+        for x in results:
+            aptDate = datetime.datetime.strptime(x[6], format).date()
+            #if it is before the date
+            if aptDate < date:
+                completedHoursFormat = timeFormat(x[4])
+                completedHours = completedHoursFormat[2] - completedHoursFormat[0]
+
+                #removes the appointment
+                cursor.execute("DELETE FROM TutorApts WHERE date = '%s'", (x[6]))
+                cursor.commit()
+
+                #adds the hours to the student and tutor accounts
+                cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[1]))
+                cursor.commit()
+                cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[2]))
+                cursor.commit()
+                
+                check +=1
+            #if the appointment is today
+            elif aptDate == date:
+                completedHoursFormat = timeFormat(x[4])
+                completedHours = completedHoursFormat[2] - completedHoursFormat[0]
+                timeStr = str(completedHoursFormat[2])+":"+str(completedHoursFormat[3])
+                aptTime = datetime.datetime.strptime(timeStr, format2).time()
+
+                if (aptTime < time):
+                    #removes the appointment
+                    cursor.execute("DELETE FROM TutorApts WHERE date = '%s'", (x[6]))
+                    cursor.commit()
+
+                    #adds the hours to the student and tutor accounts
+                    cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[1]))
+                    cursor.commit()
+                    cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[2]))
+                    cursor.commit()
+                else:
+                    break
+                
+            #if there is no more appointments that have passed
+            else:
+                break
+
+        #returns the amount of appointments removed. will return the string even if it deletes no appointments
+        conn.close()
+        return "Removed " + check + " appointment(s) and added them to completed hours."
+    
+    except: 
+        conn.close()
+        return "Error, could not find appointments"
+    
+@app.route('/api/profile')
+def get_profile():
+    id = session['key']
+    user_type = session['usertype']
+    
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+    cursor = conn.cursor()
+    if user_type == 'student':
+        cursor.execute(f"SELECT * FROM Person WHERE net_id = '{id}'")
+        result = cursor.fetchone()
+        info_dict = {
+            'first-name': result[1],
+            'middle-name': result[2],
+            'last-name': result[3],
+            'net-id': result[0],
+            'hours': result[4]
+        }
+        return info_dict
+    else: #if usertype is tutor
+        cursor.execute(f"select net_id, fname, mname, lname from Tutors where net_id = '{id}'")
+        tutor_personal_info = cursor.fetchone()
+        tutor_dict = {
+            'net-id': tutor_personal_info[0],
+            'first-name': tutor_personal_info[1],
+            'middle-name': tutor_personal_info[2],
+            'last-name': tutor_personal_info[3]
+        }
+
+        #get tutor subjects
+        cursor.execute(f"select classname from SubjectList where tutor_id = '{id}'")
+        class_list = cursor.fetchall()
+        class_list_clean = []
+        for element in class_list:
+            class_list_clean.append(element[0])
+        tutor_dict.update({'subjects': class_list_clean})
+
+        #get tutor availability
+        cursor.execute(f"select day, time from tutoravailability where tutor_id = '{id}'")
+        available_hours = cursor.fetchall()
+        tutor_dict.update({'availability': available_hours})
+
+        #get about me
+        cursor.execute(f"select about_me from aboutme where tutor_id = '{id}'")
+        about_me = cursor.fetchone()
+        tutor_dict.update({'about-me': about_me[0]})
+        return tutor_dict
+
 '''HELPER FUNCTIONS'''
 def insert_user(net_id, passwd, fname, mname, lname, usertype):
     #connect to postgre
@@ -492,111 +662,6 @@ def checkAvailability(timeSlotInfo):
 
     conn.close()
     return check
-
-#recieves an ID and returns the user's list of appointments
-def usersAppointments(id):
-    #connect to postgre
-    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
-    cursor = conn.cursor()
-
-    try:
-        #gets a list of appointments, contains the tutor first and last name, student first and last name, time and date
-        cursor.execute("SELECT t.fname AS tutor_fname, t.lname AS tutor_lname, s.fname AS student_fname, s.lname AS student_lname, ta.time, ta.date FROM TutorApts ta INNER JOIN Person t ON ta.tutor_id = t.net_id INNER JOIN Person s ON ta.student_id = s.net_id WHERE ta.tutor_id = '%s' OR ta.student_id = '%s';", (id, id))
-
-        results = cursor.fetchall()
-
-        #if there are no appointments made with that ID
-        if cursor.rowcount == 0:
-            conn.close()
-            return "No appointments with that ID"
-
-        #sorts the results based on date
-        results = sorted(results, key=lambda x: x[-1])
-
-        conn.close()
-        return results
-    
-    except: 
-        conn.close()
-        return "Error, could not find appointments"
-
-#checks to see if an appointment has passed, if it has it removes it and adds it to the user's hours
-def checkPassedAppointments(id):
-    #gets the current date and time when the function is called
-    currentDateTime = datetime.datetime.now()
-    time = currentDateTime.time()
-    date = currentDateTime.date()
-    format = '%Y-%m-%d'
-    format2 = '%H:%M'
-    check = 0
-
-    #connects
-    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
-    cursor = conn.cursor()
-
-    try:
-        #grabs a list of the appointments that contain the id
-        cursor.execute("SELECT * FROM TutorApts WHERE tutor_id = '%s' OR student_id = '%s'", (id, id))
-        reults = cursor.fetchall()
-
-        #if there are no appointments
-        if cursor.rowcount == 0:
-            conn.close()
-            return "No appointments with that ID"
-        
-        #sorts the results based on date (not sorted based on time if there is more than one on a given date)
-        results = sorted(results, key=lambda x: x[-1])
-
-        #goes through every result and sees if it is past the date
-        for x in results:
-            aptDate = datetime.datetime.strptime(x[6], format).date()
-            #if it is before the date
-            if aptDate < date:
-                completedHoursFormat = timeFormat(x[4])
-                completedHours = completedHoursFormat[2] - completedHoursFormat[0]
-
-                #removes the appointment
-                cursor.execute("DELETE FROM TutorApts WHERE date = '%s'", (x[6]))
-                cursor.commit()
-
-                #adds the hours to the student and tutor accounts
-                cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[1]))
-                cursor.commit()
-                cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[2]))
-                cursor.commit()
-                
-                check +=1
-            #if the appointment is today
-            elif aptDate == date:
-                completedHoursFormat = timeFormat(x[4])
-                completedHours = completedHoursFormat[2] - completedHoursFormat[0]
-                timeStr = str(completedHoursFormat[2])+":"+str(completedHoursFormat[3])
-                aptTime = datetime.datetime.strptime(timeStr, format2).time()
-
-                if (aptTime < time):
-                    #removes the appointment
-                    cursor.execute("DELETE FROM TutorApts WHERE date = '%s'", (x[6]))
-                    cursor.commit()
-
-                    #adds the hours to the student and tutor accounts
-                    cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[1]))
-                    cursor.commit()
-                    cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[2]))
-                    cursor.commit()
-                else:
-                    break
-                
-            #if there is no more appointments that have passed
-            else:
-                break
-
-        #returns the amount of appointments removed. will return the string even if it deletes no appointments
-        conn.close()
-        return "Removed " + check + " appointment(s) and added them to completed hours."
-    
-    except: 
-        conn.close()
-        return "Error, could not find appointments"
 
 ##checks if the password contains 12 character, upper and lower case character, and a number
 ##returns a boolean and sends a message to front end display
