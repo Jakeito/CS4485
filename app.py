@@ -10,6 +10,7 @@ import uuid
 import os
 from flask_login import *
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/tutors/'
@@ -255,13 +256,15 @@ def add_tutor():
             return frontend_msg
 
 ##checks to see if the appointment is valid, then calls insertAppointment to add to the database
+#recieves an appointmentTime, formatted as a string ex. "Monday 11am-3pm"
 @app.route('/api/register-appointment', methods=['GET', 'POST'])
-def appointmentCreation ():
+def appointmentCreation (appointmentTime):
     if request.method == 'POST':
         timeSlotInfo = request.json
-        day, timeSlot = timeSlotInfo['tutor-availability'].split(" ")
+        day, timeSlot = appointmentTime.split(" ")
+        
         timeSlot_status = timeVal(timeSlot)
-        available = checkAvailability(timeSlotInfo)
+        available = checkAvailability(timeSlotInfo, day, timeSlot)
 
         if timeSlot_status == 'Valid' and available:
             appointment_status = insertAppointment (timeSlotInfo['session_id'], timeSlotInfo['tutor_id'], timeSlotInfo['student_id'], day, timeSlot)
@@ -622,10 +625,9 @@ def insertAppointment(session_id, tutor_id, student_id, day, time):
     return 'Success'
 
 ##checks if the tutor has an available timeslot, returns a boolean
-def checkAvailability(timeSlotInfo):
+def checkAvailability(timeSlotInfo, day, timeSlot):
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
     cursor = conn.cursor()
-    day, time1 = timeSlotInfo['tutor-availability'].split(" ")
     check = False
 
     try:
@@ -640,7 +642,7 @@ def checkAvailability(timeSlotInfo):
         #checks if the selected time is in the tutors available hours
         for x in results:
             time2 = timeFormat(x)
-            if checkTime(time1, time2):
+            if checkTime(timeSlot, time2):
                 availableTime = x
                 check = True
 
@@ -856,6 +858,50 @@ def usertype_check(net_id):
         return results[0]
     except Exception as e:
         print(e)
+
+# filter endpoint returning the list of tutors based on the filter input
+load_dotenv()
+
+@app.route('/api/filter', methods=['GET'])
+def filter_tutors():
+    # Connect to PostgreSQL database 
+    conn = psycopg2.connect(
+        database=os.getenv("Tutoring"), 
+        user=os.getenv("postgres"), 
+        password=os.getenv("1234"), 
+        host=os.getenv("localhost"), 
+        port=os.getenv("5432") 
+    )
+    # get filter input from request
+    search_query = request.args.get('q', '')
+    with conn.cursor() as cur:
+        # Query all tutors and their subjects from database
+        cur.execute("SELECT name, subjects FROM tutors")
+        rows = cur.fetchall()
+
+    if search_query:
+        filtered_tutors = {}
+        # split search query into terms
+        search_terms = search_query.split() 
+        for row in rows:
+            name = row[0]
+            subjects = row[1]
+            for term in search_terms:
+                if term in name or any(subject.startswith(term) for subject in subjects):
+                    filtered_tutors.setdefault(name, []).extend(subjects)
+                    break
+    else:
+        filtered_tutors = {row[0]: row[1] for row in rows}
+    
+    # Convert subjects from comma-separated strings to lists
+    for name, subjects in filtered_tutors.items():
+        filtered_tutors[name] = [subject.strip() for subject in subjects.split(',')]
+
+    # Create list of tutor dictionaries
+    tutor_list = [{'tutor-name': name, 'subjects': subjects} for name, subjects in filtered_tutors.items()]
+    conn.close()
+
+    return jsonify(tutor_list)
 
 if __name__ == '__main__':
     app.run(debug=True)
