@@ -5,7 +5,7 @@ document.getElementById("about").onclick = function () {
     location.href = "/about";
 };
 document.getElementById("suppSubj").onclick = function () {
-    location.href = "/suppSubj";
+    location.href = "/subjects";
 };
 if (document.getElementById("requestAppointment") !== null) {
     document.getElementById("requestAppointment").onclick = function () {
@@ -78,7 +78,7 @@ function register_tutor() {
             }
         });
 
-        fetch('/api/tutor-picture?net-id=${netID}', {
+        fetch(`/api/tutor-picture?net-id=${netID}`, {
             method: 'POST',
             body: pictureFile
         }).then(response=>response.text())

@@ -5,7 +5,7 @@ document.getElementById("about").onclick = function () {
     location.href = "/about";
 };
 document.getElementById("suppSubj").onclick = function () {
-    location.href = "/suppSubj";
+    location.href = "/subjects";
 };
 if (document.getElementById("requestAppointment") !== null) {
     document.getElementById("requestAppointment").onclick = function () {
