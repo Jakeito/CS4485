@@ -299,13 +299,14 @@ def get_tutor_info():
         #mode 2, list a single tutor's information
         elif mode == 'info':
             #get tutor full name
-            cursor.execute('select net_id, fname, mname, lname from Tutors where net_id = \'' + net_id + '\'')
+            cursor.execute('select net_id, fname, mname, lname, hours_completed from Tutors where net_id = \'' + net_id + '\'')
             tutor_personal_info = cursor.fetchone()
             tutor_dict = {
                 'net-id': tutor_personal_info[0],
                 'first-name': tutor_personal_info[1],
                 'middle-name': tutor_personal_info[2],
-                'last-name': tutor_personal_info[3]
+                'last-name': tutor_personal_info[3],
+                'hours-completed': tutor_personal_info[4]
             }
 
             #get tutor subjects
@@ -343,13 +344,14 @@ def get_tutor_info():
             #iterate through the list of tutors, dict their info, and append to dict array
             for tutor in tutor_list_clean:
                 #get tutor full name
-                cursor.execute('select net_id, fname, mname, lname from Tutors where net_id = \'' + tutor + '\'')
+                cursor.execute('select net_id, fname, mname, lname, hours_completed from Tutors where net_id = \'' + net_id + '\'')
                 tutor_personal_info = cursor.fetchone()
                 tutor_dict = {
                     'net-id': tutor_personal_info[0],
                     'first-name': tutor_personal_info[1],
                     'middle-name': tutor_personal_info[2],
-                    'last-name': tutor_personal_info[3]
+                    'last-name': tutor_personal_info[3],
+                    'hours-completed': tutor_personal_info[4]
                 }
 
                 #get tutor subjects
