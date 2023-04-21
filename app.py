@@ -128,6 +128,31 @@ def get_favorites():
     # Return the results as JSON response
     return results
 
+#Similar to backend 10, but check if a tutor is favorited and return true or false
+@app.route('/api/check-favorite', methods=['POST'])
+def check_favorites():
+    # get id
+    id = session['key']
+    tutor_info = request.json
+
+    # Execute a SELECT statement to retrieve the user's fav list from the database
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
+    cursor = conn.cursor() 
+    cursor.execute("SELECT tutor_id FROM FavoriteTutors WHERE student_id = %s and tutor_id = %s", (id, tutor_info['tutor-id']))
+
+
+    # Fetch the results and store them in results
+    try:
+        tutors = cursor.fetchone()
+        conn.close()
+        if tutors is not None:
+            return 'true'
+        else:
+            return 'false'
+    except Exception as e:
+        print(repr(e))
+        return 'false'
+
 @app.route('/logout')
 def logout():
     session.pop('key', None)
