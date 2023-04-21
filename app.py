@@ -270,7 +270,7 @@ def appointmentCreation (appointmentTime):
             return "Error, Tutor is not available at that time"
         
 #this route deals with returning relevant tutor information based on mode        
-@app.route('/api/tutors', methods=['GET'])
+@app.route('/api/tutors', methods=['POST'])
 def get_tutor_info():
     data = request.json
     mode = data['request']
