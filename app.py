@@ -92,7 +92,7 @@ def login():
             print(e)
             conn.close()
             return 'Invalid username or password'
-        if results is not None:
+        if results is not None and username_input == results[0]:
             session['key'] = username_input
             session['usertype'] = usertype
             conn.close()
