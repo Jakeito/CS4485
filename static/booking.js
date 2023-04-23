@@ -33,7 +33,20 @@ if (document.getElementById("logout") !== null) {
 
 if (document.getElementById("submit") !== null) {
     document.getElementById("submit").onclick = function () {
-        const dateTime = flatpickr(document.getElementById("meeting-date-time"), {"time_24hr":true});
-        console.log(dateTime.selectedDates);
+        const dateTime = flatpickr(document.getElementById("meeting-date-time"), {"enableTime":true});
+        console.log(dateTime.selectedDates)
+        console.log(dateTime.latestSelectedDateObj)
+        console.log(dateTime.latestSelectedDateObj.getUTCFullYear())
+        console.log(dateTime.latestSelectedDateObj.getUTCMonth())
+        console.log(dateTime.latestSelectedDateObj.getDate())
+        console.log(dateTime.latestSelectedDateObj.getHours())
+        console.log(dateTime.latestSelectedDateObj.getMinutes())
+        console.log(dateTime.latestSelectedDateObj.toJSON())
+        console.log(dateTime.latestSelectedDateObj.toDateString())
+        console.log(dateTime.latestSelectedDateObj.toTimeString())
+        console.log(dateTime.latestSelectedDateObj.toUTCString())
+        console.log(dateTime.latestSelectedDateObj.toString())
+        console.log(dateTime)
     };
 }
+
