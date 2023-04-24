@@ -10,7 +10,6 @@ import uuid
 import os
 from flask_login import *
 from werkzeug.utils import secure_filename
-from dotenv import load_dotenv
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/tutors/'
@@ -369,9 +368,8 @@ def get_tutor_info():
             tutor_dict.update({'about-me': about_me[0]})
 
             all_info_dict_array.append(tutor_dict)
-            
-            conn.close()
-            return all_info_dict_array
+        conn.close()
+        return all_info_dict_array
     except:
         conn.close()
         return 'Failed to retrieve tutor info'
@@ -859,21 +857,13 @@ def usertype_check(net_id):
     except Exception as e:
         print(e)
 
-# filter endpoint returning the list of tutors based on the filter input
-load_dotenv()
-
 @app.route('/api/filter', methods=['GET'])
 def filter_tutors():
     # Connect to PostgreSQL database 
-    conn = psycopg2.connect(
-        database=os.getenv("Tutoring"), 
-        user=os.getenv("postgres"), 
-        password=os.getenv("1234"), 
-        host=os.getenv("localhost"), 
-        port=os.getenv("5432") 
-    )
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
+
     # get filter input from request
-    search_query = request.args.get('q', '')
+    search_query = request.args.get('filter')
     with conn.cursor() as cur:
         # Query all tutors and their subjects from database
         cur.execute("SELECT name, subjects FROM tutors")
@@ -901,6 +891,7 @@ def filter_tutors():
     tutor_list = [{'tutor-name': name, 'subjects': subjects} for name, subjects in filtered_tutors.items()]
     conn.close()
 
+    print(tutor_list)
     return jsonify(tutor_list)
 
 if __name__ == '__main__':
