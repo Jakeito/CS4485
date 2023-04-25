@@ -617,6 +617,63 @@ def get_profile():
         tutor_dict.update({'about-me': about_me[0]})
         conn.close()
         return tutor_dict
+    
+@app.route('/api/filter', methods=['POST'])
+def filter_tutors():
+    search = request.json
+    search_string = search['search']
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+    cursor = conn.cursor()
+
+    try:
+        #get list of net-id's with first, middle, or last name that fits search string
+        cursor.execute('select net_id from tutors where fname ilike \'%{}%\' or mname ilike \'%{}%\' or lname ilike \'%{}%\' '.format(search_string, search_string, search_string))
+        dirty_name_net_ids = cursor.fetchall()
+        clean_name_net_ids = []
+            #add each valid net id to list 
+        for element in dirty_name_net_ids:
+            clean_name_net_ids.append(element[0])
+            
+        #get list of net-id's with class name that contains search string
+        cursor.execute('select tutor_id from SubjectList where classname ilike \'%{}%\' '.format(search_string))
+        dirty_class_net_ids = cursor.fetchall()
+        clean_class_net_ids = []
+            #add each valid net id to list 
+        for element in dirty_class_net_ids:
+            clean_class_net_ids.append(element[0])
+
+        #create a union set of the two lists
+        tutor_list_clean = list(set(clean_name_net_ids) | set(clean_class_net_ids))
+
+        #for each element in aggregated list, dict the information based on the net-id
+            #setting up the dict array
+        info_dict_array = []
+        for tutor in tutor_list_clean:
+            #get tutor full name
+            cursor.execute('select net_id, fname, mname, lname, hours_completed from Tutors where net_id = \'' + tutor + '\'')
+            tutor_personal_info = cursor.fetchone()
+            tutor_dict = {
+                'net-id': tutor_personal_info[0],
+                'first-name': tutor_personal_info[1],
+                'middle-name': tutor_personal_info[2],
+                'last-name': tutor_personal_info[3],
+                'hours-completed': tutor_personal_info[4]
+            }
+
+            #get tutor subjects
+            cursor.execute('select classname from SubjectList where tutor_id = \''+ tutor +'\'')
+            class_list = cursor.fetchall()
+            class_list_clean = []
+            for element in class_list:
+                class_list_clean.append(element[0])
+            tutor_dict.update({'subjects': class_list_clean})
+            info_dict_array.append(tutor_dict)
+            
+        conn.close()
+        return info_dict_array
+    except Exception as e :
+        conn.close()
+        return('Error' + repr(e))
 
 '''HELPER FUNCTIONS'''
 def insert_user(net_id, passwd, fname, mname, lname, usertype):
@@ -896,43 +953,6 @@ def usertype_check(net_id):
         return results[0]
     except Exception as e:
         print(e)
-
-@app.route('/api/filter', methods=['GET'])
-def filter_tutors():
-    # Connect to PostgreSQL database 
-    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
-
-    # get filter input from request
-    search_query = request.args.get('filter')
-    with conn.cursor() as cur:
-        # Query all tutors and their subjects from database
-        cur.execute("SELECT name, subjects FROM tutors")
-        rows = cur.fetchall()
-
-    if search_query:
-        filtered_tutors = {}
-        # split search query into terms
-        search_terms = search_query.split() 
-        for row in rows:
-            name = row[0]
-            subjects = row[1]
-            for term in search_terms:
-                if term in name or any(subject.startswith(term) for subject in subjects):
-                    filtered_tutors.setdefault(name, []).extend(subjects)
-                    break
-    else:
-        filtered_tutors = {row[0]: row[1] for row in rows}
-    
-    # Convert subjects from comma-separated strings to lists
-    for name, subjects in filtered_tutors.items():
-        filtered_tutors[name] = [subject.strip() for subject in subjects.split(',')]
-
-    # Create list of tutor dictionaries
-    tutor_list = [{'tutor-name': name, 'subjects': subjects} for name, subjects in filtered_tutors.items()]
-    conn.close()
-
-    print(tutor_list)
-    return jsonify(tutor_list)
 
 if __name__ == '__main__':
     app.run(debug=True)
