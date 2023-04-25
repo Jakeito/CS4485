@@ -31,22 +31,38 @@ if (document.getElementById("logout") !== null) {
     };
 }
 
+var meet = flatpickr('input[type=datetime-local]', {
+    enableTime: true,
+    minDate: 'today',
+    time_24hr: true,
+
+});
+
 if (document.getElementById("submit") !== null) {
     document.getElementById("submit").onclick = function () {
-        const dateTime = flatpickr(document.getElementById("meeting-date-time"), {"enableTime":true});
-        console.log(dateTime.selectedDates)
-        console.log(dateTime.latestSelectedDateObj)
-        console.log(dateTime.latestSelectedDateObj.getUTCFullYear())
-        console.log(dateTime.latestSelectedDateObj.getUTCMonth())
-        console.log(dateTime.latestSelectedDateObj.getDate())
-        console.log(dateTime.latestSelectedDateObj.getHours())
-        console.log(dateTime.latestSelectedDateObj.getMinutes())
-        console.log(dateTime.latestSelectedDateObj.toJSON())
-        console.log(dateTime.latestSelectedDateObj.toDateString())
-        console.log(dateTime.latestSelectedDateObj.toTimeString())
-        console.log(dateTime.latestSelectedDateObj.toUTCString())
-        console.log(dateTime.latestSelectedDateObj.toString())
-        console.log(dateTime)
-    };
+        console.log((meet.latestSelectedDateObj).toString());
+        const date = meet.latestSelectedDateObj.toString();
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        const id = urlParams.get('net-id');
+
+        fetch(`/api/register-appointment?net-id=${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                'date': date
+            })
+        }).then(response=>response.text())
+        .then(data=>{
+            if (data !== 'Valid') {
+                alert(data);
+            }
+            else {
+                window.location.href = '/appointment';
+            }
+        });
+    }
 }
 

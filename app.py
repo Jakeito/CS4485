@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, jsonify, redirect, session, u
 from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 import json
-import datetime
+from datetime import datetime
+from datetime import timedelta
 import psycopg2
 import hashlib
 import imghdr
@@ -132,16 +133,16 @@ def get_favorites():
     return results
 
 #Similar to backend 10, but check if a tutor is favorited and return true or false
-@app.route('/api/check-favorite', methods=['POST'])
+@app.route('/api/check-favorite')
 def check_favorites():
     # get id
     id = session['key']
-    tutor_info = request.json
+    tutor_id = request.args.get('net-id')
 
     # Execute a SELECT statement to retrieve the user's fav list from the database
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
     cursor = conn.cursor() 
-    cursor.execute("SELECT tutor_id FROM FavoriteTutors WHERE student_id = %s and tutor_id = %s", (id, tutor_info['tutor-id']))
+    cursor.execute("SELECT tutor_id FROM FavoriteTutors WHERE student_id = %s and tutor_id = %s", (id, tutor_id))
 
 
     # Fetch the results and store them in results
@@ -282,16 +283,30 @@ def add_tutor():
 ##checks to see if the appointment is valid, then calls insertAppointment to add to the database
 #recieves an appointmentTime, formatted as a string ex. "Monday 11am-3pm"
 @app.route('/api/register-appointment', methods=['GET', 'POST'])
-def appointmentCreation (appointmentTime):
+def appointmentCreation():
     if request.method == 'POST':
-        timeSlotInfo = request.json
-        day, timeSlot = appointmentTime.split(" ")
+        student_id = session['key']
+        tutor_id = request.args.get('net-id')
+        result = request.json
+        day = result['date'].split(" ")[0]
+        date = f'{result["date"].split(" ")[1]}-{result["date"].split(" ")[2]}-{result["date"].split(" ")[3]}'
+        start_time = result['date'].split(" ")[4]
+        start_time = start_time[:-3]
+        time = datetime.strptime(start_time, '%H:%M')
+        end_time = time + timedelta(minutes=30)
+        end_time = end_time.strftime('%H:%M')
+        timeSlot = f'{start_time}-{end_time}'
+        print(day)
+        print(date)
+        print(start_time)
+        print(end_time)
+        print(timeSlot)
         
         timeSlot_status = timeVal(timeSlot)
         available = checkAvailability(timeSlotInfo, day, timeSlot)
 
         if timeSlot_status == 'Valid' and available:
-            appointment_status = insertAppointment (timeSlotInfo['session_id'], timeSlotInfo['tutor_id'], timeSlotInfo['student_id'], day, timeSlot)
+            appointment_status = insertAppointment (timeSlotInfo['session_id'], tutor_id, student_id, day, timeSlot)
             return appointment_status
         elif timeSlot_status != 'Valid':
             return timeSlot_status
