@@ -94,7 +94,7 @@ input[type="submit"] {
     text-align: center;
     cursor: pointer;
   }
-  input[type="text"], input[type="datetime-local"], input[type="email"], input[type="number"] {
+  .date {
     background-color: white;
     border-left-color: darkgreen;
     border-style:none;

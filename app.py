@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, jsonify, redirect, session, url_for
+from flask import Flask, render_template, request, jsonify, redirect, session, url_for, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 import json
-import datetime
+from datetime import datetime
+from datetime import timedelta
 import psycopg2
 import hashlib
 import imghdr
@@ -10,10 +11,9 @@ import uuid
 import os
 from flask_login import *
 from werkzeug.utils import secure_filename
-from dotenv import load_dotenv
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'tutors/'
+app.config['UPLOAD_FOLDER'] = 'static/tutors/'
 app.config['SECRET_KEY'] = 'mysecretkey'
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
@@ -58,6 +58,10 @@ def appointments():
 @app.route('/booking')
 def booking():
     return render_template('booking.html')
+
+@app.route('/subjects')
+def subjects():
+    return render_template('supported.html')
 
 '''API ROUTES'''
 @app.route('/api/net-id')
@@ -129,16 +133,16 @@ def get_favorites():
     return results
 
 #Similar to backend 10, but check if a tutor is favorited and return true or false
-@app.route('/api/check-favorite', methods=['POST'])
+@app.route('/api/check-favorite')
 def check_favorites():
     # get id
     id = session['key']
-    tutor_info = request.json
+    tutor_id = request.args.get('net-id')
 
     # Execute a SELECT statement to retrieve the user's fav list from the database
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
     cursor = conn.cursor() 
-    cursor.execute("SELECT tutor_id FROM FavoriteTutors WHERE student_id = %s and tutor_id = %s", (id, tutor_info['tutor-id']))
+    cursor.execute("SELECT tutor_id FROM FavoriteTutors WHERE student_id = %s and tutor_id = %s", (id, tutor_id))
 
 
     # Fetch the results and store them in results
@@ -166,7 +170,7 @@ def get_all_subjects():
     class_table_clean = []
     for element in class_table_dirty:
         class_table_clean.append(element[0])
-
+    print(class_table_clean)
     return class_table_clean
 
 @app.route('/api/tutor-picture', methods=['POST'])
@@ -184,9 +188,10 @@ def add_pic():
         if not filename.endswith('png') and not filename.endswith('jpeg') and not filename.endswith('jpg'):
             return 'Wrong file extension'
         path = app.config['UPLOAD_FOLDER'] + net_id
+        extension = filename.split('.')
         if not os.path.exists(path):
             os.makedirs(path)
-        pic.save(os.path.join(app.config['UPLOAD_FOLDER'] + net_id + '/', filename))
+        pic.save(os.path.join(app.config['UPLOAD_FOLDER'] + net_id + '/', net_id + '.' + extension[1]))
     except Exception as e:
         print(e)
     return 'Valid'
@@ -278,64 +283,114 @@ def add_tutor():
 ##checks to see if the appointment is valid, then calls insertAppointment to add to the database
 #recieves an appointmentTime, formatted as a string ex. "Monday 11am-3pm"
 @app.route('/api/register-appointment', methods=['GET', 'POST'])
-def appointmentCreation (appointmentTime):
+def appointmentCreation():
     if request.method == 'POST':
-        timeSlotInfo = request.json
-        day, timeSlot = appointmentTime.split(" ")
+        student_id = session['key']
+        tutor_id = request.args.get('net-id')
+        result = request.json
+        day = result['date'].split(" ")[0]
+        date = f'{result["date"].split(" ")[1]}-{result["date"].split(" ")[2]}-{result["date"].split(" ")[3]}'
+        start_time = result['date'].split(" ")[4]
+        start_time = start_time[:-3]
+        time = datetime.strptime(start_time, '%H:%M')
+        end_time = time + timedelta(minutes=30)
+        end_time = end_time.strftime('%H:%M')
+        timeSlot = f'{start_time}-{end_time}'
+        print(day)
+        print(date)
+        print(start_time)
+        print(end_time)
+        print(timeSlot)
         
         timeSlot_status = timeVal(timeSlot)
         available = checkAvailability(timeSlotInfo, day, timeSlot)
 
         if timeSlot_status == 'Valid' and available:
-            appointment_status = insertAppointment (timeSlotInfo['session_id'], timeSlotInfo['tutor_id'], timeSlotInfo['student_id'], day, timeSlot)
+            appointment_status = insertAppointment (timeSlotInfo['session_id'], tutor_id, student_id, day, timeSlot)
             return appointment_status
         elif timeSlot_status != 'Valid':
             return timeSlot_status
         else:
             return "Error, Tutor is not available at that time"
-        
+
+@app.route('/api/tutor/pic')
+def get_tutor_pic():
+    net_id = request.args.get('net-id')
+    return send_from_directory(f'tutors/{net_id}', net_id)
+
+@app.route('/api/tutor')
+def get_tutor_profile():
+    id = request.args.get('net-id')
+    
+    conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
+    cursor = conn.cursor()
+
+    try:
+        #get tutor full name
+        cursor.execute(f"select net_id, fname, mname, lname from Tutors where net_id = '{id}'")
+        tutor_personal_info = cursor.fetchone()
+        tutor_dict = {
+            'net-id': tutor_personal_info[0],
+            'first-name': tutor_personal_info[1],
+            'middle-name': tutor_personal_info[2],
+            'last-name': tutor_personal_info[3]
+        }
+
+        #get tutor subjects
+        cursor.execute(f"select classname from SubjectList where tutor_id = '{id}'")
+        class_list = cursor.fetchall()
+        class_list_clean = []
+        for element in class_list:
+            class_list_clean.append(element[0])
+        tutor_dict.update({'subjects': class_list_clean})
+
+        #get tutor availability
+        cursor.execute(f"select day, time from tutoravailability where tutor_id = '{id}'")
+        available_hours = cursor.fetchall()
+        tutor_dict.update({'availability': available_hours})
+
+        #get about me
+        cursor.execute(f"select about_me from aboutme where tutor_id = '{id}'")
+        about_me = cursor.fetchone()
+        tutor_dict.update({'about-me': about_me[0]})
+
+        conn.close()
+        return tutor_dict
+    except Exception as e:
+        print(e)
+        return e
+
 #this route deals with returning relevant tutor information based on mode        
-@app.route('/api/tutors', methods=['POST'])
+@app.route('/api/tutors')
 def get_tutor_info():
-    data = request.json
-    mode = data['request']
-    net_id = data['net-id']
     #connect to postgre
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
     cursor = conn.cursor()
 
     try:
-        #mode 1, list all tutors
-        if mode == 'list':
-            cursor.execute('select net_id, fname, mname, lname from Tutors')
-            tutors = cursor.fetchall()
-            #building a dict to return to frontend
-            tutor_dict_array = []
-            for x in tutors:
-                temp_dict = {
-                    'net-id': x[0],
-                    'first-name': x[1],
-                    'middle-name': x[2],
-                    'last-name': x[3]
-                }
-                tutor_dict_array.append(temp_dict)
-            conn.close()
-            return tutor_dict_array
-        #mode 2, list a single tutor's information
-        elif mode == 'info':
+        #setting up the dict array
+        all_info_dict_array = []
+        #first, get list of all tutors
+        cursor.execute('select net_id from Tutors')
+        tutors = cursor.fetchall()
+        #contains the array of only tutor net IDs
+        tutor_list_clean = []
+        for element in tutors:
+            tutor_list_clean.append(element[0])
+        #iterate through the list of tutors, dict their info, and append to dict array
+        for tutor in tutor_list_clean:
             #get tutor full name
-            cursor.execute('select net_id, fname, mname, lname, hours_completed from Tutors where net_id = \'' + net_id + '\'')
+            cursor.execute('select net_id, fname, mname, lname from Tutors where net_id = \'' + tutor + '\'')
             tutor_personal_info = cursor.fetchone()
             tutor_dict = {
                 'net-id': tutor_personal_info[0],
                 'first-name': tutor_personal_info[1],
                 'middle-name': tutor_personal_info[2],
-                'last-name': tutor_personal_info[3],
-                'hours-completed': tutor_personal_info[4]
+                'last-name': tutor_personal_info[3]
             }
 
             #get tutor subjects
-            cursor.execute('select classname from SubjectList where tutor_id = \''+ net_id +'\'')
+            cursor.execute('select classname from SubjectList where tutor_id = \''+ tutor +'\'')
             class_list = cursor.fetchall()
             class_list_clean = []
             for element in class_list:
@@ -343,64 +398,18 @@ def get_tutor_info():
             tutor_dict.update({'subjects': class_list_clean})
 
             #get tutor availability
-            cursor.execute('select day, time from tutoravailability where tutor_id = \''+ net_id +'\'')
+            cursor.execute('select day, time from tutoravailability where tutor_id = \''+ tutor +'\'')
             available_hours = cursor.fetchall()
             tutor_dict.update({'availability': available_hours})
 
             #get about me
-            cursor.execute('select about_me from aboutme where tutor_id = \''+ net_id +'\'')
+            cursor.execute('select about_me from aboutme where tutor_id = \''+ tutor +'\'')
             about_me = cursor.fetchone()
             tutor_dict.update({'about-me': about_me[0]})
 
-            conn.close()
-            return tutor_dict
-
-        #mode 3, query for all tutor information
-        elif mode == 'all-info':
-            #setting up the dict array
-            all_info_dict_array = []
-            #first, get list of all tutors
-            cursor.execute('select net_id from Tutors')
-            tutors = cursor.fetchall()
-            #contains the array of only tutor net IDs
-            tutor_list_clean = []
-            for element in tutors:
-                tutor_list_clean.append(element[0])
-            #iterate through the list of tutors, dict their info, and append to dict array
-            for tutor in tutor_list_clean:
-                #get tutor full name
-                cursor.execute('select net_id, fname, mname, lname, hours_completed from Tutors where net_id = \'' + net_id + '\'')
-                tutor_personal_info = cursor.fetchone()
-                tutor_dict = {
-                    'net-id': tutor_personal_info[0],
-                    'first-name': tutor_personal_info[1],
-                    'middle-name': tutor_personal_info[2],
-                    'last-name': tutor_personal_info[3],
-                    'hours-completed': tutor_personal_info[4]
-                }
-
-                #get tutor subjects
-                cursor.execute('select classname from SubjectList where tutor_id = \''+ tutor +'\'')
-                class_list = cursor.fetchall()
-                class_list_clean = []
-                for element in class_list:
-                    class_list_clean.append(element[0])
-                tutor_dict.update({'subjects': class_list_clean})
-
-                #get tutor availability
-                cursor.execute('select day, time from tutoravailability where tutor_id = \''+ tutor +'\'')
-                available_hours = cursor.fetchall()
-                tutor_dict.update({'availability': available_hours})
-
-                #get about me
-                cursor.execute('select about_me from aboutme where tutor_id = \''+ tutor +'\'')
-                about_me = cursor.fetchone()
-                tutor_dict.update({'about-me': about_me[0]})
-
-                all_info_dict_array.append(tutor_dict)
-            
-            conn.close()
-            return all_info_dict_array
+            all_info_dict_array.append(tutor_dict)
+        conn.close()
+        return all_info_dict_array
     except:
         conn.close()
         return 'Failed to retrieve tutor info'
@@ -577,6 +586,7 @@ def get_profile():
             'net-id': result[0],
             'hours': result[4]
         }
+        conn.close()
         return info_dict
     else: #if usertype is tutor
         cursor.execute(f"select net_id, fname, mname, lname from Tutors where net_id = '{id}'")
@@ -605,6 +615,7 @@ def get_profile():
         cursor.execute(f"select about_me from aboutme where tutor_id = '{id}'")
         about_me = cursor.fetchone()
         tutor_dict.update({'about-me': about_me[0]})
+        conn.close()
         return tutor_dict
     
 @app.route('/api/filter', methods=['POST'])
