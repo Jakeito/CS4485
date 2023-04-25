@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Home</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <link href='https://fonts.googleapis.com/css?family=Inter' rel='stylesheet'>
+    <script defer src="/static/supported.js"></script>
+    <link href="/static/styles.css" rel="stylesheet" />
+</head>
+
+<header>
+    <div class="row justify-content-center">
+        <div class="col-lg-1" style="width: 20%;">
+            <img src="/static/images/v1_19.png" width="100%" height="100%">
+        </div>
+    </div>
+    <div class="row align-items-end justify-content-center" style="margin: 10%; margin-top: 2%; margin-bottom: 2%;">
+        <div class="col-sm-2">
+            <button id="home" type="button" class="btn btn-primary btn-lg"
+                style="width: 90%; height: 90%;">HOME</button>
+        </div>
+        <div class="col-sm-2">
+            <button id="about" type="button" class="btn btn-primary btn-lg"
+                style="width: 90%; height: 90%;">ABOUT</button>
+        </div>
+        <div class="col-sm-2">
+            <button id="suppSubj" type="button" class="btn btn-primary btn-lg"
+                style="width: 90%; height: 90%;">SUBJECTS</button>
+        </div>
+        {% if session['key'] is defined %}
+            {% block signed_in %}
+            <div class="col-sm-2">
+                <button id="requestAppointment" type="button" class="btn btn-primary btn-lg"
+                    style="width: 90%; height: 90%;">APPOINTMENTS</button>
+            </div>
+            <div class="col-sm-2">
+                <button id="profile" type="button" class="btn btn-primary btn-lg"
+                style="width: 90%; height: 90%;">PROFILE</button>
+            </div>
+            <div class="col-sm-2">
+                <button id="logout" type="button" class="btn btn-primary btn-lg"
+                style="width: 90%; height: 90%;">LOGOUT</button>
+            </div>
+            {% endblock signed_in %}
+        {% else %}
+            {% block not_signed_in %}
+            <div class="col-sm-2">
+                <button id="signin" type="button" class="btn btn-primary btn-lg"
+                style="width: 90%; height: 90%;">SIGN IN</button>
+            </div>
+            {% endblock not_signed_in %}
+        {% endif %}
+    </div>
+</header>
+
+
+<body>
+    <div class="row justify-content-center">
+        <div class="col text-center">
+            <p7>Here are our supported subjects</p7>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-3 justify-content-center">
+            <table class="center" style="text-align: center; width: 100%;">
+                <tbody id="subjects">
+                </tbody>
+            </table>
+        </div>
+</body>
+
+<footer>
+    <div class="footer">
+        <hr>
+        <div class="container justify-content-center">
+            <p1>Hello,</p1>
+            <p2> we are </p2>
+            <p3>ETutor</p3>
+            <br>
+            <p4>We are here to help disadvantaged students to achieve their academic goals. *</p4>
+            <br>
+            <br>
+            <br>
+            <p5>We have tutors available for a wide variety of subjects.</p5>
+            <br>
+            <p5>*Students are expected to exercise independent thought and expression. The tutors have the right to ask
+                for
+                the source of coursework content
+                and may or may not be able to assist with it.
+            </p5>
+        </div>
+    </div>
+</footer>
+
+</html>
