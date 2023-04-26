@@ -66,7 +66,6 @@ async function check_favorite(mode) {
             }
         })
         const data = await response.text();
-        console.log(data);
 
         if (data === 'false') {
             $('#favorite').append(`<i id="fav" class="bi- bi-star" style="font-size: xx-large;"></i>`);
@@ -138,7 +137,7 @@ async function info_list() {
                 })
                 availabilityString += `</p1><br>`
                 $('#tutor-info').append(availabilityString);
-                $('#tutor-info').append(`<p1>About Me: ${data['hours']}</p1><br>`);
+                $('#tutor-info').append(`<p1>About Me: ${data['about-me']}</p1><br>`);
             }
             else {
                 $('#tutor-info').append(`<p1>Name: ${data['first-name']} ${data['last-name']}</p1><br>`);
@@ -156,7 +155,7 @@ async function info_list() {
                 })
                 availabilityString += `</p1><br>`
                 $('#tutor-info').append(availabilityString);
-                $('#tutor-info').append(`<p1>About Me: ${data['hours']}</p1><br>`);
+                $('#tutor-info').append(`<p1>About Me: ${data['about-me']}</p1><br>`);
             }
         }
     }
@@ -172,7 +171,7 @@ async function get_pic() {
         const urlParams = new URLSearchParams(queryString);
         const id = urlParams.get('net-id');
 
-        $('#picture').append(`<img src="/static/tutors/${id}/${id}" style="max-width: 100%; height: auto;">`)
+        $('#picture').append(`<img src="/static/tutors/${id}/${id}.png" width="500" height="500">`)
     }
     catch (e) {
         console.log(e);

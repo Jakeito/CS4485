@@ -10,6 +10,14 @@ document.getElementById("suppSubj").onclick = function () {
 if (document.getElementById("requestAppointment") !== null) {
     document.getElementById("requestAppointment").onclick = function () {
         location.href = "/appointment";
+
+        fetch('/api/check-appointment',
+        {
+            method: 'POST'
+        }).then(response=>response.text())
+        .then(data=>{
+            console.log(data);
+        });
     };
     fetch('/api/check-appointment',
     {
@@ -29,7 +37,10 @@ if (document.getElementById("profile") !== null ) {
         })
         fetch('/api/check-appointment',
         {
-            method: 'POST' 
+            method: 'POST'
+        }).then(response=>response.text())
+        .then(data=>{
+            console.log(data);
         });
     };
 }
@@ -70,7 +81,7 @@ info_list();
 async function info_list() {
     try {
         let usertype = '';
-        fetch('/api/net-id').then(response=>response.text())
+        fetch('/api/user-type').then(response=>response.text())
         .then(data=>{
             usertype = data;
         })
@@ -113,7 +124,7 @@ async function info_list() {
                     })
                     availabilityString += `</p1><br>`
                     $('#info').append(availabilityString);
-                    $('#info').append(`<p1>About Me: ${data['hours']}</p1><br>`);
+                    $('#info').append(`<p1>About Me: ${data['about-me']}</p1><br>`);
                 }
                 else {
                     $('#info').append(`<p1>Name: ${data['first-name']} ${data['last-name']}</p1><br>`);
@@ -131,7 +142,7 @@ async function info_list() {
                     })
                     availabilityString += `</p1><br>`
                     $('#info').append(availabilityString);
-                    $('#info').append(`<p1>About Me: ${data['hours']}</p1><br>`);
+                    $('#info').append(`<p1>About Me: ${data['about-me']}</p1><br>`);
                 }
             }
         }
@@ -148,7 +159,7 @@ async function get_pic() {
         fetch('/api/net-id').then(response => response.text())
             .then(data => {
                 console.log(data);
-                $('#picture').append(`<img src="/static/tutors/${data}/${data}">`)
+                $('#picture').append(`<img src="/static/tutors/${data}/${data}.png" width="500" height="500">`)
         })
     }
     catch (e) {

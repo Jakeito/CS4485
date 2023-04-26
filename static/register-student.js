@@ -33,8 +33,10 @@ if (document.getElementById("logout") !== null) {
 document.getElementById("signup-tutor").onclick = function () {
     location.href = "/register-tutor";
 }
-$(document).ready(function () {
-    $('#signup').click(register_student)
+
+document.getElementById('signup').addEventListener('click', function(e) {
+    e.preventDefault();
+    register_student();
 })
 
 function register_student() {
@@ -64,7 +66,7 @@ function register_student() {
                 alert(data);
             }
             else {
-                window.location.href = '/home';
+                location.href = '/home';
             }
         });
     }

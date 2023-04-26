@@ -38,7 +38,7 @@ CREATE TABLE Login (
 
 CREATE TABLE TutorApts (
     --session_id will be used as a nonce 
-    session_id int not null,
+    session_id varchar(10) not null,
     tutor_id varchar(9) not null,
     student_id varchar(9) not null,
     --day should be formatted as a full day of the week, max characters are 9 since Wednesday is the longest day of the week
@@ -46,9 +46,8 @@ CREATE TABLE TutorApts (
     --time should be formatted as a span of hours, such as "9am-11am" and will be parsed in the backend
     --longest possible input is "xx:xxam-xx:xxpm", 
     time varchar(18) not null,
-    subject varchar (30) not null,
     --dates should be formatted as "yyyy-mm-dd"
-    date varchar(10) not null,
+    date varchar(20) not null,
 
 
     PRIMARY KEY (session_id),
