@@ -303,11 +303,11 @@ def appointmentCreation():
         print(timeSlot)
         
         timeSlot_status = timeVal(timeSlot)
-        available = checkAvailability(timeSlotInfo, day, timeSlot)
+        available = ''#checkAvailability(timeSlotInfo, day, timeSlot)
 
         if timeSlot_status == 'Valid' and available:
-            appointment_status = insertAppointment (timeSlotInfo['session_id'], tutor_id, student_id, day, timeSlot)
-            return appointment_status
+            #appointment_status = insertAppointment (timeSlotInfo['session_id'], tutor_id, student_id, day, timeSlot)
+            return ''#appointment_status
         elif timeSlot_status != 'Valid':
             return timeSlot_status
         else:
@@ -618,10 +618,9 @@ def get_profile():
         conn.close()
         return tutor_dict
     
-@app.route('/api/filter', methods=['POST'])
+@app.route('/api/filter', methods=['GET'])
 def filter_tutors():
-    search = request.json
-    search_string = search['search']
+    search_string = request.args.get('filter')
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
     cursor = conn.cursor()
 

@@ -90,8 +90,8 @@ CREATE TABLE FavoriteTutors(
 
 CREATE TABLE AboutMe(
     tutor_id varchar(9) not null,
-    --about me should be a max of 500 characters
-    about_me varchar(500),
+    --about me should be a max of 1000 characters
+    about_me varchar(1000),
 
     PRIMARY KEY (tutor_id),
     FOREIGN KEY (tutor_id) REFERENCES Person (net_id)
