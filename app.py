@@ -754,7 +754,7 @@ def checkAvailability(tutor_id, day, timeSlot):
             return check
         
         ##checks to see if an apointment is already schedules in that time slot
-        cursor.execute("SELECT * FROM TutorApts WHERE tutor_id = %s AND time = %s AND day = %s", (tutor_id, availableTime, day))
+        cursor.execute("SELECT * FROM TutorApts WHERE tutor_id = %s AND time = %s AND day = %s", (tutor_id, timeSlot, day))
         results = cursor.fetchall()
         if cursor.rowcount != 0:
             conn.close()
