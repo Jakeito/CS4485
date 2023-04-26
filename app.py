@@ -8,9 +8,11 @@ import psycopg2
 import hashlib
 import imghdr
 import uuid
-import os
+import sys, os
 from flask_login import *
 from werkzeug.utils import secure_filename
+import secrets
+import string
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/tutors/'
@@ -81,7 +83,7 @@ def login():
         password_input = credentials['password']
         hashed = encrypt(password_input)
         usertype = usertype_check(username_input)
-        print(hashed)
+
         #connect to postgre
         conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
 
@@ -90,13 +92,13 @@ def login():
     
         try:
             #inserting data into DB
-            cursor.execute(f"select net_id from login where hashed_pw = '{hashed}'")
+            cursor.execute(f"select hashed_pw from login where net_id = '{username_input}'")
             results = cursor.fetchone()
         except Exception as e:
             print(e)
             conn.close()
             return 'Invalid username or password'
-        if results is not None and username_input == results[0]:
+        if results is not None and hashed == results[0]:
             session['key'] = username_input
             session['usertype'] = usertype
             conn.close()
@@ -128,7 +130,8 @@ def get_favorites():
             'lname': result[2],
         }
         results.append(favorite_dict)
-    conn.close()    
+    conn.close()
+
     # Return the results as JSON response
     return results
 
@@ -143,7 +146,6 @@ def check_favorites():
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
     cursor = conn.cursor() 
     cursor.execute("SELECT tutor_id FROM FavoriteTutors WHERE student_id = %s and tutor_id = %s", (id, tutor_id))
-
 
     # Fetch the results and store them in results
     try:
@@ -179,11 +181,11 @@ def add_pic():
     try:
         if 'file' not in request.files:
             print('missing file')
-            return 'failed'
+            return 'Error with picture'
         pic = request.files['file']
         if pic.filename == '':
             print('no file')
-            return 'failed'
+            return 'Error with picture'
         filename = secure_filename(pic.filename)
         if not filename.endswith('png') and not filename.endswith('jpeg') and not filename.endswith('jpg'):
             return 'Wrong file extension'
@@ -191,15 +193,15 @@ def add_pic():
         extension = filename.split('.')
         if not os.path.exists(path):
             os.makedirs(path)
-        pic.save(os.path.join(app.config['UPLOAD_FOLDER'] + net_id + '/', net_id + '.' + extension[1]))
+        pic.save(os.path.join(app.config['UPLOAD_FOLDER'] + net_id + '/', net_id + '.png'))
     except Exception as e:
         print(e)
+        return('Error with picture')
     return 'Valid'
 
 #this register deals with registering a student
 @app.route('/api/register-student', methods=['POST'])
 def add_student():
-
     if request.method == 'POST':
         user_info = request.json
         #check username and pwd input input
@@ -218,7 +220,6 @@ def add_student():
                 insert_status = insert_user(user_info['net-id'],user_info['password'],user_info['first-name'],'',user_info['last-name'],user_info['user-type'].lower())
                 if insert_status != 'Valid':
                     return insert_status
-                
             return 'Valid'
         else:
             if username_valid != 'Valid':
@@ -246,7 +247,6 @@ def add_tutor():
         for timeslots in availability_array:
             if timeVal(timeslots) != 'Valid':
                 availability_valid = 'At least one availability is not formatted correctly, please format as [Day] [Start-End]'
-        
 
         supported_subjects_valid = 'Valid'
         #availability_array is an array of class abbreviation and numbers, and each pair needs to be validated, but can be inserted as one string
@@ -289,6 +289,7 @@ def appointmentCreation():
         tutor_id = request.args.get('net-id')
         result = request.json
         day = result['date'].split(" ")[0]
+        day = dayParse(day)
         date = f'{result["date"].split(" ")[1]}-{result["date"].split(" ")[2]}-{result["date"].split(" ")[3]}'
         start_time = result['date'].split(" ")[4]
         start_time = start_time[:-3]
@@ -296,18 +297,21 @@ def appointmentCreation():
         end_time = time + timedelta(minutes=30)
         end_time = end_time.strftime('%H:%M')
         timeSlot = f'{start_time}-{end_time}'
+        alphabet = string.ascii_letters + string.digits
+        session_id = ''.join(secrets.choice(alphabet) for i in range(10))
+        print(session_id)
         print(day)
         print(date)
         print(start_time)
         print(end_time)
         print(timeSlot)
         
-        timeSlot_status = timeVal(timeSlot)
-        available = ''#checkAvailability(timeSlotInfo, day, timeSlot)
+        timeSlot_status = timeVal(f"{day} {timeSlot}")
+        available = checkAvailability(tutor_id, day, timeSlot)
 
         if timeSlot_status == 'Valid' and available:
-            #appointment_status = insertAppointment (timeSlotInfo['session_id'], tutor_id, student_id, day, timeSlot)
-            return ''#appointment_status
+            appointment_status = insertAppointment (session_id, tutor_id, student_id, day, timeSlot, date)
+            return appointment_status
         elif timeSlot_status != 'Valid':
             return timeSlot_status
         else:
@@ -321,19 +325,19 @@ def get_tutor_pic():
 @app.route('/api/tutor')
 def get_tutor_profile():
     id = request.args.get('net-id')
-    
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
     cursor = conn.cursor()
 
     try:
         #get tutor full name
-        cursor.execute(f"select net_id, fname, mname, lname from Tutors where net_id = '{id}'")
+        cursor.execute(f"select net_id, fname, mname, lname, hours_completed from Tutors where net_id = '{id}'")
         tutor_personal_info = cursor.fetchone()
         tutor_dict = {
             'net-id': tutor_personal_info[0],
             'first-name': tutor_personal_info[1],
             'middle-name': tutor_personal_info[2],
-            'last-name': tutor_personal_info[3]
+            'last-name': tutor_personal_info[3],
+            'hours': tutor_personal_info[4]
         }
 
         #get tutor subjects
@@ -424,6 +428,7 @@ def add_favorite_tutor():
     #get student id
     student_id = session['key']
     tutor_id = data['tutor-id']
+
     #check for login session, if not logged in don't add to favorites
     try:
         if student_id != '':
@@ -468,8 +473,7 @@ def usersAppointments():
 
     try:
         #gets a list of appointments, contains the tutor first and last name, student first and last name, time and date
-        cursor.execute("SELECT t.fname AS tutor_fname, t.lname AS tutor_lname, s.fname AS student_fname, s.lname AS student_lname, ta.time, ta.date FROM TutorApts ta INNER JOIN Person t ON ta.tutor_id = t.net_id INNER JOIN Person s ON ta.student_id = s.net_id WHERE ta.tutor_id = '%s' OR ta.student_id = '%s';", (id, id))
-
+        cursor.execute("SELECT t.fname AS tutor_fname, t.lname AS tutor_lname, s.fname AS student_fname, s.lname AS student_lname, ta.time, ta.date FROM TutorApts ta INNER JOIN Person t ON ta.tutor_id = t.net_id INNER JOIN Person s ON ta.student_id = s.net_id WHERE ta.tutor_id = %s OR ta.student_id = %s;", (id, id))
         results = cursor.fetchall()
 
         #if there are no appointments made with that ID
@@ -479,12 +483,12 @@ def usersAppointments():
 
         #sorts the results based on date
         results = sorted(results, key=lambda x: x[-1])
-
         conn.close()
         return results
     
-    except: 
+    except Exception as e: 
         conn.close()
+        print(e)
         return "Error, could not find appointments"
 
 #checks to see if an appointment has passed, if it has it removes it and adds it to the user's hours
@@ -494,10 +498,13 @@ def checkPassedAppointments():
     id = session['key']
 
     #gets the current date and time when the function is called
-    currentDateTime = datetime.datetime.now()
+    currentDateTime = datetime.now() + timedelta(days=20)
+    print(currentDateTime)
     time = currentDateTime.time()
+    print(time)
     date = currentDateTime.date()
-    format = '%Y-%m-%d'
+    print(date)
+    format = '%b-%d-%Y'
     format2 = '%H:%M'
     check = 0
 
@@ -507,7 +514,7 @@ def checkPassedAppointments():
 
     try:
         #grabs a list of the appointments that contain the id
-        cursor.execute("SELECT * FROM TutorApts WHERE tutor_id = '%s' OR student_id = '%s'", (id, id))
+        cursor.execute("SELECT * FROM TutorApts WHERE tutor_id = %s OR student_id = %s", (id, id))
         results = cursor.fetchall()
 
         #if there are no appointments
@@ -517,42 +524,42 @@ def checkPassedAppointments():
         
         #sorts the results based on date (not sorted based on time if there is more than one on a given date)
         results = sorted(results, key=lambda x: x[-1])
+        print(results)
 
         #goes through every result and sees if it is past the date
         for x in results:
-            aptDate = datetime.datetime.strptime(x[6], format).date()
+            aptDate = datetime.strptime(x[5], format).date()
             #if it is before the date
             if aptDate < date:
-                completedHoursFormat = timeFormat(x[4])
-                completedHours = completedHoursFormat[2] - completedHoursFormat[0]
+                completedHours = completed_hours_calc(x[4])
 
                 #removes the appointment
-                cursor.execute("DELETE FROM TutorApts WHERE date = '%s'", (x[6]))
+                cursor.execute("DELETE FROM TutorApts WHERE date = %s", (x[5]))
                 cursor.commit()
 
                 #adds the hours to the student and tutor accounts
-                cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[1]))
+                cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = %s",(completedHours, x[1]))
                 cursor.commit()
-                cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[2]))
+                cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = %s",(completedHours, x[2]))
                 cursor.commit()
                 
                 check +=1
             #if the appointment is today
             elif aptDate == date:
-                completedHoursFormat = timeFormat(x[4])
-                completedHours = completedHoursFormat[2] - completedHoursFormat[0]
+                completedHoursFormat = x[4]
+                completedHours = completed_hours_calc(x[4])
                 timeStr = str(completedHoursFormat[2])+":"+str(completedHoursFormat[3])
-                aptTime = datetime.datetime.strptime(timeStr, format2).time()
+                aptTime = datetime.strptime(timeStr, format2).time()
 
                 if (aptTime < time):
                     #removes the appointment
-                    cursor.execute("DELETE FROM TutorApts WHERE date = '%s'", (x[6]))
+                    cursor.execute("DELETE FROM TutorApts WHERE date = %s", (x[5]))
                     cursor.commit()
 
                     #adds the hours to the student and tutor accounts
-                    cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[1]))
+                    cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = %s",(completedHours, x[1]))
                     cursor.commit()
-                    cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = '%s'",(completedHours, x[2]))
+                    cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = %s",(completedHours, x[2]))
                     cursor.commit()
                 else:
                     break
@@ -563,10 +570,12 @@ def checkPassedAppointments():
 
         #returns the amount of appointments removed. will return the string even if it deletes no appointments
         conn.close()
-        return "Removed " + check + " appointment(s) and added them to completed hours."
-    
-    except: 
+        print(check)
+        return "Removed appointment and added them to completed hours."
+    except Exception as e: 
         conn.close()
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        print(e, exc_tb.tb_lineno)
         return "Error, could not find appointments"
     
 @app.route('/api/profile')
@@ -589,13 +598,14 @@ def get_profile():
         conn.close()
         return info_dict
     else: #if usertype is tutor
-        cursor.execute(f"select net_id, fname, mname, lname from Tutors where net_id = '{id}'")
+        cursor.execute(f"select net_id, fname, mname, lname, hours_completed from Tutors where net_id = '{id}'")
         tutor_personal_info = cursor.fetchone()
         tutor_dict = {
             'net-id': tutor_personal_info[0],
             'first-name': tutor_personal_info[1],
             'middle-name': tutor_personal_info[2],
-            'last-name': tutor_personal_info[3]
+            'last-name': tutor_personal_info[3],
+            'hours': tutor_personal_info[4]
         }
 
         #get tutor subjects
@@ -690,9 +700,9 @@ def insert_user(net_id, passwd, fname, mname, lname, usertype):
     print('Connection established to: ', connectCheck)
     
     try:
-        
         #call hashing function
         #save hashedpw, and send into db
+        print(passwd)
         hashedPassword = encrypt(passwd)
             
         #inserting data into DB
@@ -706,27 +716,26 @@ def insert_user(net_id, passwd, fname, mname, lname, usertype):
     return 'Valid'
 
 ##adds the appointment to the database
-def insertAppointment(session_id, tutor_id, student_id, day, time):
+def insertAppointment(session_id, tutor_id, student_id, day, time, date):
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
     cursor = conn.cursor()
-
     try:
-        cursor.execute("insert into TutorApts (session_id, tutor_id, student_id, day, time) values (\'" + session_id + "\', \'" + tutor_id + "\', \'" + student_id + "\', \'" + day + "\', \'" + time + "\')")
+        cursor.execute(f"insert into TutorApts (session_id, tutor_id, student_id, day, time, date) values ('{session_id}', '{tutor_id}', '{student_id}', '{day}', '{time}', '{date}')")
         conn.commit()
-    except:
+    except Exception as e:
+        print(e)
         return ("Error, appointment could not be created")
     conn.close()
     return 'Success'
 
 ##checks if the tutor has an available timeslot, returns a boolean
-def checkAvailability(timeSlotInfo, day, timeSlot):
+def checkAvailability(tutor_id, day, timeSlot):
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
     cursor = conn.cursor()
     check = False
-
     try:
         ##gets the tutors available days
-        cursor.execute("SELECT time FROM TutorAvailability WHERE tutor_id = '%s' AND day = '%s'", (timeSlotInfo['tutor_id'], day))
+        cursor.execute("SELECT time FROM TutorAvailability WHERE tutor_id = %s AND day = %s", (tutor_id, day))
         results = cursor.fetchall()
 
         if cursor.rowcount == 0:
@@ -735,8 +744,8 @@ def checkAvailability(timeSlotInfo, day, timeSlot):
         
         #checks if the selected time is in the tutors available hours
         for x in results:
-            time2 = timeFormat(x)
-            if checkTime(timeSlot, time2):
+            #time2 = timeFormat(x)
+            if checkTime(timeSlot, x[0]):
                 availableTime = x
                 check = True
 
@@ -745,16 +754,15 @@ def checkAvailability(timeSlotInfo, day, timeSlot):
             return check
         
         ##checks to see if an apointment is already schedules in that time slot
-        cursor.execute("SELECT * FROM TutorApts WHERE tutor_id = '%s' AND time = '%s' AND day = '%s'", (timeSlotInfo['tutor_id'], availableTime, day))
+        cursor.execute("SELECT * FROM TutorApts WHERE tutor_id = %s AND time = %s AND day = %s", (tutor_id, availableTime, day))
         results = cursor.fetchall()
         if cursor.rowcount != 0:
             conn.close()
             return False
-
-    except:
+    except Exception as e:
         conn.close()
+        print(e)
         return False
-
     conn.close()
     return check
 
@@ -763,20 +771,15 @@ def checkAvailability(timeSlotInfo, day, timeSlot):
 def strongPWD(pwd):
     check = True
     weakPass = ""
-    
     if len(pwd) < 12:
         check = False
         weakPass += "Password needs to be at least 12 characters.\n"
-
     if pwd.islower() or pwd.isupper():
         check = False
         weakPass += "Password needs at least 1 upper and 1 lower case character.\n"
-    
     if any(i.isdigit() for i in pwd) == False:
         check = False
         weakPass += "Password needs at least one number.\n"
-
-
     if check:
         return "Strong"
     else:
@@ -792,11 +795,9 @@ def insert_tutor_info(net_id, availability, supported_subjects, about_me):
     try:
         #insert availability into availability table, input is a string with input separated by newlines
         availability_array = availability.split('\n')
-        #print(availability_array)
         
         for x in availability_array:
             #making sure to cull accidental newlines
-            print(x)
             if x != '':
                 #each availability entry in the array/list is stored as "[day] [time]", and needs to be split further via its space
                 day_time_split = x.split()
@@ -813,12 +814,10 @@ def insert_tutor_info(net_id, availability, supported_subjects, about_me):
                 #insert each subject entry
                 cursor.execute('insert into SubjectList (tutor_id, classname) values (\''+ net_id +'\',\''+ input +'\')')
                 conn.commit()
-        
 
         #insert about me into table
         cursor.execute('insert into AboutMe(tutor_id, about_me) values (\''+ net_id + '\', \''+ about_me +'\')')
         conn.commit()
-
     except:
         return ("Error in inserting tutor information")
     conn.close()
@@ -883,7 +882,8 @@ def subjectVal (subject):
 
 ##checks to see if one time value fits in another
 def checkTime (time1, time2):
-    
+    print(time1)
+    print(time2)
     if time1[0] < time2[0] or time1[2] > time2[2]:
         return False
     if (time1[0] == time2[0] and time1[1] < time2[1]) or (time1[2] == time2[2] and time1[3] > time2[3]):
@@ -891,10 +891,9 @@ def checkTime (time1, time2):
     return True
 
 #reformats time from the database to 4 ints, [hour1, minute1, hour2, minute2]. 
-#the rusults will be in 24-hour time to keep am and pm separate
+#the results will be in 24-hour time to keep am and pm separate
 #ex: 12pm-3pm will become an array [12,0,15,0], for 
 def timeFormat(timeSlot):
-    
     start_time, end_time = timeSlot.split('-')
 
     #if there are minute values
@@ -910,18 +909,14 @@ def timeFormat(timeSlot):
 
     start_hour = int(start_hour)
     end_hour = int(end_hour)
-
     if start_time[-2:] == 'pm' and start_hour != 12:
         start_hour += 12
-
     if end_time[-2:] == 'pm' and end_hour != 12:
         end_hour += 12
-
     if start_min == '':
         start_min = 0
     if end_min == '':
         end_min = 0
-         
     return [int(start_hour), int(start_min), int(end_hour), int(end_min)]
 
 #validates time and day from a givent imeslot
@@ -929,7 +924,6 @@ def timeVal (timeSlot):
     ##separates the timeSlot string at the space characters
     try:
         day = timeSlot.split()
-
         day[1] = day[1].replace("-", ":")
         time = day[1].split(":")
 
@@ -940,7 +934,44 @@ def timeVal (timeSlot):
             return "Not a valid time. \n"
         return "Valid"
     except Exception as e:
+        print(e)
         return "Not a valid day/time. \n"
+    
+#parse day name abbreviations to actual day names
+def dayParse(day):
+    try:
+        if day == 'Sun':
+            return 'Sunday'
+        elif day == 'Mon':
+            return 'Monday'
+        elif day == 'Tue':
+            return 'Tuesday'
+        elif day == 'Wed':
+            return 'Wednesday'
+        elif day == 'Thu':
+            return 'Thursday'
+        elif day == 'Fri':
+            return 'Friday'
+        elif day == 'Sat':
+            return 'Saturday'
+    except Exception as e:
+        print(e)
+
+def completed_hours_calc(timeslot):
+    times = timeslot.split('-')
+    hour1 = int(times[0].split(':')[0])
+    hour2 = int(times[1].split(':')[0])
+    minute1 = int(times[0].split(':')[1])
+    minute2 = int(times[0].split(':')[1])
+
+    hours = hour2 - hour1
+    minutes = minute2 - minute1
+    if minutes == -30:
+        minutes = -.5
+    else:
+        minutes = .5
+    completed_hours = hours + minutes
+    return completed_hours
 
 def usertype_check(net_id):
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
@@ -951,7 +982,7 @@ def usertype_check(net_id):
         results = cursor.fetchone()
         return results[0]
     except Exception as e:
-        print(e)
+        print('User does not exist')
 
 if __name__ == '__main__':
     app.run(debug=True)

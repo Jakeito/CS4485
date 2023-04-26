@@ -10,6 +10,14 @@ document.getElementById("suppSubj").onclick = function () {
 if (document.getElementById("requestAppointment") !== null) {
     document.getElementById("requestAppointment").onclick = function () {
         location.href = "/appointment";
+
+        fetch('/api/check-appointment',
+        {
+            method: 'POST'
+        }).then(response=>response.text())
+        .then(data=>{
+            console.log(data);
+        });
     };
 }
 if (document.getElementById("signin") !== null) {
@@ -23,6 +31,14 @@ if (document.getElementById("profile") !== null ) {
         .then(data=>{
             location.href = "/profile/" + data;
         })
+
+        fetch('/api/check-appointment',
+        {
+            method: 'POST'
+        }).then(response=>response.text())
+        .then(data=>{
+            console.log(data);
+        });
     };
 }
 if (document.getElementById("logout") !== null) {
@@ -41,7 +57,6 @@ async function tutor_list() {
             }
         })
         const data = await response.json();
-        console.log(data);
         if (response.ok) {
             data.forEach(i => {
                 if (i['middle-name']) {
@@ -73,7 +88,25 @@ async function filter_func() {
             }
         })
         const data = await response.json();
-        
+        if (response.ok) {
+            $('#tutor-table tbody').remove();
+            $('#tutor-table').append('<tbody>');
+            data.forEach(i => {
+                if (i['middle-name']) {
+                    appendString = `<tr><td><a href="/tutor?net-id=${i['net-id']}">${i['first-name']} ${i['middle-name']} ${i['last-name']}<br>${i['net-id']}</td>`;
+                }
+                else {
+                    appendString = `<tr><td><a href="/tutor?net-id=${i['net-id']}">${i['first-name']} ${i['last-name']}<br>${i['net-id']}</td>`;
+                }
+                appendString += `<td>`
+                i['subjects'].forEach(j => {
+                    appendString += `${j} | `
+                })
+                appendString += `</td></tr>`;
+                $('#tutor-table').append(appendString);
+                $('#tutor-table').append('</tbody>');
+        })
+        }
     }
     catch(e) {
         console.log(e);
@@ -81,7 +114,6 @@ async function filter_func() {
     setTimeout(filter_func, 1000)
 }
 
-//NOT COMPLETED FIX THIS LATER
 existing_list();
 async function existing_list() {
     try {
@@ -95,13 +127,8 @@ async function existing_list() {
         console.log(data);
         if (response.ok) {
             data.forEach(i => {
-                if (i['t.mname']) {
-                    appendString = `<tr><td>${i['t.fname']} ${i['t.mname']} ${i['t.lname']}</td>`
-                }
-                else {
-                    appendString = `<tr><td>${i['t.fname']} ${i['t.lname']}</td>`
-                }
-                appendString += `<td>${i['ta.date']} ${i['ta.time']}</td></tr>`
+                appendString = `<tr><td>${i[0]} ${i[1]}</td>`
+                appendString += `<td>${i[5]} | ${i[4]}</td></tr>`
                 $('#appointment-list').append(appendString);
             })
         }

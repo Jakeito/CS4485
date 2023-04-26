@@ -33,8 +33,9 @@ if (document.getElementById("logout") !== null) {
 document.getElementById("signup-student").onclick = function () {
     location.href = "/register-student";
 }
-$(document).ready(function () {
-    $('#signup').click(register_tutor);
+document.getElementById('signup').addEventListener('click', function(e) {
+    e.preventDefault();
+    register_tutor();
 })
 
 function register_tutor() {
@@ -71,23 +72,32 @@ function register_tutor() {
         }).then(response=>response.text())
         .then(data=>{
             if (data !== 'Valid') {
-                alert(data);
+                fetch(`/api/tutor-picture?net-id=${netID}`, {
+                    method: 'POST',
+                    body: pictureFile
+                }).then(response=>response.text())
+                .then(picData=>{
+                    if (picData !== 'Valid') {
+                        alert(data + '\n' + picData);
+                    }
+                    else {
+                        alert(data);
+                    }
+                });
             }
             else {
-                window.location.href = '/home';
-            }
-        });
-
-        fetch(`/api/tutor-picture?net-id=${netID}`, {
-            method: 'POST',
-            body: pictureFile
-        }).then(response=>response.text())
-        .then(data=>{
-            if (data !== 'Valid') {
-                alert(data);
-            }
-            else {
-                window.location.href = '/home';
+                fetch(`/api/tutor-picture?net-id=${netID}`, {
+                    method: 'POST',
+                    body: pictureFile
+                }).then(response=>response.text())
+                .then(picData=>{
+                    if (picData !== 'Valid') {
+                        alert(data + '\n' + picData);
+                    }
+                    else {
+                        location.href = '/home';
+                    }
+                });
             }
         });
     }
