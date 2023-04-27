@@ -5,11 +5,16 @@ document.getElementById("about").onclick = function () {
     location.href = "/about";
 };
 document.getElementById("suppSubj").onclick = function () {
-    location.href = "/suppSubj";
+    location.href = "/subjects";
 };
 if (document.getElementById("requestAppointment") !== null) {
     document.getElementById("requestAppointment").onclick = function () {
         location.href = "/appointment";
+
+        fetch('/api/check-appointment',
+            {
+                method: 'POST'
+            });
     };
 }
 if (document.getElementById("signin") !== null) {
@@ -17,12 +22,17 @@ if (document.getElementById("signin") !== null) {
         location.href = "/signin";
     };
 }
-if (document.getElementById("profile") !== null ) {
+if (document.getElementById("profile") !== null) {
     document.getElementById("profile").onclick = function () {
-        fetch('/api/net-id').then(response=>response.text())
-        .then(data=>{
-            location.href = "/profile/" + data;
-        })
+        fetch('/api/net-id').then(response => response.text())
+            .then(data => {
+                location.href = "/profile/" + data;
+            })
+
+        fetch('/api/check-appointment',
+            {
+                method: 'POST'
+            });
     };
 }
 if (document.getElementById("logout") !== null) {
@@ -40,7 +50,6 @@ var meet = flatpickr('input[type=datetime-local]', {
 
 if (document.getElementById("submit") !== null) {
     document.getElementById("submit").onclick = function () {
-        console.log((meet.latestSelectedDateObj).toString());
         const date = meet.latestSelectedDateObj.toString();
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
@@ -56,7 +65,7 @@ if (document.getElementById("submit") !== null) {
             })
         }).then(response=>response.text())
         .then(data=>{
-            if (data !== 'Valid') {
+            if (data !== 'Success') {
                 alert(data);
             }
             else {

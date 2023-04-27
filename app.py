@@ -299,12 +299,6 @@ def appointmentCreation():
         timeSlot = f'{start_time}-{end_time}'
         alphabet = string.ascii_letters + string.digits
         session_id = ''.join(secrets.choice(alphabet) for i in range(10))
-        print(session_id)
-        print(day)
-        print(date)
-        print(start_time)
-        print(end_time)
-        print(timeSlot)
         
         timeSlot_status = timeVal(f"{day} {timeSlot}")
         available = checkAvailability(tutor_id, day, timeSlot)
@@ -498,15 +492,11 @@ def checkPassedAppointments():
     id = session['key']
 
     #gets the current date and time when the function is called
-    currentDateTime = datetime.now() + timedelta(days=20)
-    print(currentDateTime)
+    currentDateTime = datetime.now()
     time = currentDateTime.time()
-    print(time)
     date = currentDateTime.date()
-    print(date)
     format = '%b-%d-%Y'
     format2 = '%H:%M'
-    check = 0
 
     #connects
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432') 
@@ -529,53 +519,51 @@ def checkPassedAppointments():
         #goes through every result and sees if it is past the date
         for x in results:
             aptDate = datetime.strptime(x[5], format).date()
+            completedHours = completed_hours_calc(x[4])
+
             #if it is before the date
             if aptDate < date:
-                completedHours = completed_hours_calc(x[4])
-
                 #removes the appointment
-                cursor.execute("DELETE FROM TutorApts WHERE date = %s", (x[5]))
-                cursor.commit()
+                cursor.execute(f"DELETE FROM TutorApts WHERE date = '{x[5]}'")
+                conn.commit()
 
                 #adds the hours to the student and tutor accounts
-                cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = %s",(completedHours, x[1]))
-                cursor.commit()
-                cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = %s",(completedHours, x[2]))
-                cursor.commit()
-                
-                check +=1
+                cursor.execute(f"UPDATE Person SET hours_completed = hours_completed+{completedHours} WHERE net_id = '{x[1]}'")
+                conn.commit()
+                cursor.execute(f"UPDATE Person SET hours_completed = hours_completed+{completedHours} WHERE net_id = '{x[2]}'")
+                conn.commit()
+            
             #if the appointment is today
             elif aptDate == date:
-                completedHoursFormat = x[4]
-                completedHours = completed_hours_calc(x[4])
-                timeStr = str(completedHoursFormat[2])+":"+str(completedHoursFormat[3])
-                aptTime = datetime.strptime(timeStr, format2).time()
+                aptTime = x[4].split('-')
+                aptTime = aptTime[1]
+                aptTime = datetime.strptime(aptTime, format2).time()
+                print(aptTime)
+                print(time)
 
                 if (aptTime < time):
                     #removes the appointment
-                    cursor.execute("DELETE FROM TutorApts WHERE date = %s", (x[5]))
-                    cursor.commit()
+                    cursor.execute(f"DELETE FROM TutorApts WHERE date = '{x[5]}'")
+                    conn.commit()
 
                     #adds the hours to the student and tutor accounts
                     cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = %s",(completedHours, x[1]))
-                    cursor.commit()
+                    conn.commit()
                     cursor.execute("UPDATE Person SET hours_completed = hours_completed+%d WHERE net_id = %s",(completedHours, x[2]))
-                    cursor.commit()
+                    conn.commit()
                 else:
                     break
                 
             #if there is no more appointments that have passed
             else:
-                break
+                continue
 
         #returns the amount of appointments removed. will return the string even if it deletes no appointments
         conn.close()
-        print(check)
         return "Removed appointment and added them to completed hours."
     except Exception as e: 
         conn.close()
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        print(e, exc_tb.tb_lineno)
+        print(e)
         return "Error, could not find appointments"
     
 @app.route('/api/profile')
@@ -744,9 +732,7 @@ def checkAvailability(tutor_id, day, timeSlot):
         
         #checks if the selected time is in the tutors available hours
         for x in results:
-            #time2 = timeFormat(x)
             if checkTime(timeSlot, x[0]):
-                availableTime = x
                 check = True
 
         if check == False:
@@ -889,35 +875,6 @@ def checkTime (time1, time2):
     if (time1[0] == time2[0] and time1[1] < time2[1]) or (time1[2] == time2[2] and time1[3] > time2[3]):
         return False
     return True
-
-#reformats time from the database to 4 ints, [hour1, minute1, hour2, minute2]. 
-#the results will be in 24-hour time to keep am and pm separate
-#ex: 12pm-3pm will become an array [12,0,15,0], for 
-def timeFormat(timeSlot):
-    start_time, end_time = timeSlot.split('-')
-
-    #if there are minute values
-    if ":" in timeSlot:
-        start_hour, start_min = [val for val in start_time[:-2].split(':')]
-        end_hour, end_min = [val for val in end_time[:-2].split(':')]
-    #else if there is no minute values
-    else:
-        start_hour = int(start_time[:-2])
-        end_hour = int(end_time[:-2])
-        start_min = 0
-        end_min = 0
-
-    start_hour = int(start_hour)
-    end_hour = int(end_hour)
-    if start_time[-2:] == 'pm' and start_hour != 12:
-        start_hour += 12
-    if end_time[-2:] == 'pm' and end_hour != 12:
-        end_hour += 12
-    if start_min == '':
-        start_min = 0
-    if end_min == '':
-        end_min = 0
-    return [int(start_hour), int(start_min), int(end_hour), int(end_min)]
 
 #validates time and day from a givent imeslot
 def timeVal (timeSlot):

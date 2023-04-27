@@ -10,6 +10,11 @@ document.getElementById("suppSubj").onclick = function () {
 if (document.getElementById("requestAppointment") !== null) {
     document.getElementById("requestAppointment").onclick = function () {
         location.href = "/appointment";
+
+        fetch('/api/check-appointment',
+            {
+                method: 'POST'
+            });
     };
 }
 if (document.getElementById("signin") !== null) {
@@ -17,12 +22,17 @@ if (document.getElementById("signin") !== null) {
         location.href = "/signin";
     };
 }
-if (document.getElementById("profile") !== null ) {
+if (document.getElementById("profile") !== null) {
     document.getElementById("profile").onclick = function () {
-        fetch('/api/net-id').then(response=>response.text())
-        .then(data=>{
-            location.href = "/profile/" + data;
-        })
+        fetch('/api/net-id').then(response => response.text())
+            .then(data => {
+                location.href = "/profile/" + data;
+            })
+
+        fetch('/api/check-appointment',
+            {
+                method: 'POST'
+            });
     };
 }
 if (document.getElementById("logout") !== null) {
@@ -51,7 +61,6 @@ function register_tutor() {
     var pictureFile = new FormData();
     pictureFile.append('file', picture.files[0]);
 
-    console.log(netID + '\n' + password)
     if (firstName !== '' && lastName !== '' && netID !== '' && password !== '' && aboutMe !== '' && supportSubjects !== '' && availability !== ''){
         fetch('/api/register-tutor', {
             method: 'POST',
