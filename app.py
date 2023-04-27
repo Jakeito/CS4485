@@ -301,7 +301,7 @@ def appointmentCreation():
         session_id = ''.join(secrets.choice(alphabet) for i in range(10))
         
         timeSlot_status = timeVal(f"{day} {timeSlot}")
-        available = checkAvailability(tutor_id, day, timeSlot)
+        available = checkAvailability(tutor_id, day, date, timeSlot)
 
         if timeSlot_status == 'Valid' and available:
             appointment_status = insertAppointment (session_id, tutor_id, student_id, day, timeSlot, date)
@@ -514,7 +514,6 @@ def checkPassedAppointments():
         
         #sorts the results based on date (not sorted based on time if there is more than one on a given date)
         results = sorted(results, key=lambda x: x[-1])
-        print(results)
 
         #goes through every result and sees if it is past the date
         for x in results:
@@ -538,8 +537,6 @@ def checkPassedAppointments():
                 aptTime = x[4].split('-')
                 aptTime = aptTime[1]
                 aptTime = datetime.strptime(aptTime, format2).time()
-                print(aptTime)
-                print(time)
 
                 if (aptTime < time):
                     #removes the appointment
@@ -690,7 +687,6 @@ def insert_user(net_id, passwd, fname, mname, lname, usertype):
     try:
         #call hashing function
         #save hashedpw, and send into db
-        print(passwd)
         hashedPassword = encrypt(passwd)
             
         #inserting data into DB
@@ -717,7 +713,7 @@ def insertAppointment(session_id, tutor_id, student_id, day, time, date):
     return 'Success'
 
 ##checks if the tutor has an available timeslot, returns a boolean
-def checkAvailability(tutor_id, day, timeSlot):
+def checkAvailability(tutor_id, day, date, timeSlot):
     conn = psycopg2.connect(database='Tutoring', user='postgres', password='1234', host='localhost', port='5432')
     cursor = conn.cursor()
     check = False
@@ -740,11 +736,17 @@ def checkAvailability(tutor_id, day, timeSlot):
             return check
         
         ##checks to see if an apointment is already schedules in that time slot
-        cursor.execute("SELECT * FROM TutorApts WHERE tutor_id = %s AND time = %s AND day = %s", (tutor_id, timeSlot, day))
+        cursor.execute("SELECT * FROM TutorApts WHERE tutor_id = %s AND day = %s AND date = %s", (tutor_id, day, date))
         results = cursor.fetchall()
         if cursor.rowcount != 0:
+            for i in results:
+                startInputTime = datetime.strptime(timeSlot.split('-')[0], '%H:%M')
+                endInputTime = datetime.strptime(timeSlot.split('-')[1], '%H:%M')
+                startExistingTime = datetime.strptime(i[4].split('-')[0], '%H:%M')
+                endExistingTime = datetime.strptime(i[4].split('-')[1], '%H:%M')
+                if (startInputTime >= startExistingTime and startInputTime <= endExistingTime) or (endInputTime >= startExistingTime and endInputTime <= endExistingTime):
+                    check = False
             conn.close()
-            return False
     except Exception as e:
         conn.close()
         print(e)
@@ -868,11 +870,13 @@ def subjectVal (subject):
 
 ##checks to see if one time value fits in another
 def checkTime (time1, time2):
-    print(time1)
-    print(time2)
-    if time1[0] < time2[0] or time1[2] > time2[2]:
-        return False
-    if (time1[0] == time2[0] and time1[1] < time2[1]) or (time1[2] == time2[2] and time1[3] > time2[3]):
+    time1 = time1.split('-')
+    startInput = datetime.strptime(time1[0], '%H:%M')
+    endInput = datetime.strptime(time1[1], '%H:%M')
+    time2 = time2.split('-')
+    startExist = datetime.strptime(time2[0], '%H:%M')
+    endExist = datetime.strptime(time2[1], '%H:%M')
+    if startInput < startExist or endInput > endExist:
         return False
     return True
 
