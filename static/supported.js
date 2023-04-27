@@ -10,27 +10,29 @@ document.getElementById("suppSubj").onclick = function () {
 if (document.getElementById("requestAppointment") !== null) {
     document.getElementById("requestAppointment").onclick = function () {
         location.href = "/appointment";
+
+        fetch('/api/check-appointment',
+            {
+                method: 'POST'
+            });
     };
-    fetch('/api/check-appointment',
-    {
-        method: 'POST' 
-    });
 }
 if (document.getElementById("signin") !== null) {
     document.getElementById("signin").onclick = function () {
         location.href = "/signin";
     };
 }
-if (document.getElementById("profile") !== null ) {
+if (document.getElementById("profile") !== null) {
     document.getElementById("profile").onclick = function () {
-        fetch('/api/net-id').then(response=>response.text())
-        .then(data=>{
-            location.href = "/profile/" + data;
-        })
+        fetch('/api/net-id').then(response => response.text())
+            .then(data => {
+                location.href = "/profile/" + data;
+            })
+
         fetch('/api/check-appointment',
-        {
-            method: 'POST' 
-        });
+            {
+                method: 'POST'
+            });
     };
 }
 if (document.getElementById("logout") !== null) {
@@ -49,7 +51,6 @@ async function subj_list() {
             }
         })
         const data = await response.json();
-        console.log(data);
         if (response.ok) {
             appendString = ''
             data.forEach(i => {

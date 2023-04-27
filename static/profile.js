@@ -14,9 +14,6 @@ if (document.getElementById("requestAppointment") !== null) {
         fetch('/api/check-appointment',
         {
             method: 'POST'
-        }).then(response=>response.text())
-        .then(data=>{
-            console.log(data);
         });
     };
     fetch('/api/check-appointment',
@@ -38,9 +35,6 @@ if (document.getElementById("profile") !== null ) {
         fetch('/api/check-appointment',
         {
             method: 'POST'
-        }).then(response=>response.text())
-        .then(data=>{
-            console.log(data);
         });
     };
 }
@@ -60,7 +54,6 @@ async function favorite_list() {
             }
         })
         const data = await response.json();
-        console.log(data);
         if (response.ok) {
             data.forEach(i => {
                 if (i['mname']) {
@@ -93,7 +86,6 @@ async function info_list() {
             }
         })
         const data = await response.json();
-        console.log(data);
         if (response.ok) {
             if (usertype === 'student') {
                 if (data['middle-name']) {
@@ -158,7 +150,6 @@ async function get_pic() {
         let id = '';
         fetch('/api/net-id').then(response => response.text())
             .then(data => {
-                console.log(data);
                 $('#picture').append(`<img src="/static/tutors/${data}/${data}.png" width="500" height="500">`)
         })
     }

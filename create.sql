@@ -17,7 +17,7 @@ CREATE TABLE Person (
     --if a lone "x" is read in the mname value, then the person does not have a middle name registered
     mname varchar(30) null,
     lname varchar(30) not null,
-    hours_completed int null DEFAULT 0,
+    hours_completed float null DEFAULT 0,
     --usertype should contain the string "student" or "tutor"
     usertype varchar(7) not null,
 

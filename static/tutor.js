@@ -10,11 +10,12 @@ document.getElementById("suppSubj").onclick = function () {
 if (document.getElementById("requestAppointment") !== null) {
     document.getElementById("requestAppointment").onclick = function () {
         location.href = "/appointment";
+
+        fetch('/api/check-appointment',
+            {
+                method: 'POST'
+            });
     };
-    fetch('/api/check-appointment',
-        {
-            method: 'POST'
-        });
 }
 if (document.getElementById("signin") !== null) {
     document.getElementById("signin").onclick = function () {
@@ -27,6 +28,7 @@ if (document.getElementById("profile") !== null) {
             .then(data => {
                 location.href = "/profile/" + data;
             })
+
         fetch('/api/check-appointment',
             {
                 method: 'POST'
@@ -119,7 +121,6 @@ async function info_list() {
                 }
             })
         const data = await response.json();
-        console.log(data);
         if (response.ok) {
             if (data['middle-name']) {
                 $('#tutor-info').append(`<p1>Name: ${data['first-name']} ${data['middle-name']} ${data['last-name']}</p1><br>`);
