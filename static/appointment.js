@@ -72,14 +72,15 @@ async function tutor_list() {
     }
 }
 
+var usertype = '';
+fetch('/api/user-type').then(response => response.text())
+    .then(data => {
+        usertype = data;
+    })
+
 filter_func();
 async function filter_func() {
     try {
-        let usertype = '';
-        await fetch('/api/user-type').then(response => response.text())
-            .then(data => {
-                usertype = data;
-        })
         if (usertype == 'student') {
             const response = await fetch(`/api/filter?filter=${$('#search').val()}`,
                 {
@@ -122,7 +123,7 @@ async function existing_list() {
         await fetch('/api/user-type').then(response => response.text())
             .then(data => {
                 usertype = data;
-        })
+            })
         const response = await fetch('/api/get-appointments',
             {
                 headers: {
