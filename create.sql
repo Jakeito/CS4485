@@ -44,7 +44,7 @@ CREATE TABLE TutorApts (
     --day should be formatted as a full day of the week, max characters are 9 since Wednesday is the longest day of the week
     day varchar (9) not null,
     --time should be formatted as a span of hours, such as "9am-11am" and will be parsed in the backend
-    --longest possible input is "xx:xxam-xx:xxpm", 
+    --longest possible input is "xx:xx-xx:xx", military time
     time varchar(18) not null,
     --dates should be formatted as "yyyy-mm-dd"
     date varchar(20) not null,

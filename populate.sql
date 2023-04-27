@@ -54,11 +54,11 @@ values ('abc180000', '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7
 
 --add date functionality to sql statements
 insert into TutorApts (session_id, tutor_id, student_id, day, time, date)
-values (0, 'abc180000', 'mno180000', 'Monday', '9am-11am','2023-04-26'),
-(1, 'abc180000', 'pqr180000', 'Tuesday', '5pm-6pm','2023-07-26'),
-(2, 'def180000', 'stu180000', 'Wednesday', '11am-1pm','2023-10-03'),
-(3, 'ghi180000', 'vwx180000', 'Thursday', '2pm-3pm','2023-11-16'),
-(4, 'jkl180000', 'yza180000', 'Friday', '11am-1pm','2023-11-21');
+values (0, 'abc180000', 'mno180000', 'Monday', '09:00-11:00','2023-04-26'),
+(1, 'abc180000', 'pqr180000', 'Tuesday', '17:00-18:00','2023-07-26'),
+(2, 'def180000', 'stu180000', 'Wednesday', '11:00-13:00','2023-10-03'),
+(3, 'ghi180000', 'vwx180000', 'Thursday', '14:00-15:00','2023-11-16'),
+(4, 'jkl180000', 'yza180000', 'Friday', '11:00-13:00','2023-11-21');
 --done
 
 insert into SubjectList (tutor_id, classname)
@@ -83,31 +83,31 @@ values ('abc180000', 'Discrete Math'),
 --done
 
 insert into TutorAvailability (tutor_id, day, time)
-values ('abc180000', 'Monday', '9am-12pm'),
-('abc180000', 'Monday', '5pm-7pm'),
-('abc180000', 'Tuesday', '5pm-7pm'),
-('abc180000', 'Thursday', '5pm-7pm'),
-('abc180000', 'Friday', '5pm-7pm'),
-('def180000', 'Monday', '9am-12pm'),
-('def180000', 'Tuesday', '10am-1pm'),
-('def180000', 'Wednesday', '11am-2pm'),
-('def180000', 'Thursday', '12pm-3pm'),
-('def180000', 'Friday', '1pm-4pm'),
-('ghi180000', 'Monday', '9:30am-12:30pm'),
-('ghi180000', 'Tuesday', '10:30am-1:30pm'),
-('ghi180000', 'Wednesday', '11:30am-2:30pm'),
-('ghi180000', 'Thursday', '12:30pm-3:30pm'),
-('ghi180000', 'Friday', '1:30pm-4:30pm'),
-('jkl180000', 'Monday', '9am-12:30pm'),
-('jkl180000', 'Tueday', '9:30am-1pm'),
-('jkl180000', 'Wednesday', '10am-1:30pm'),
-('jkl180000', 'Thursday', '10:30am-2pm'),
-('jkl180000', 'Friday', '11am-2:30pm'),
-('axc180000', 'Monday', '5pm-7pm'),
-('jad180000', 'Monday', '5pm-7pm'),
-('ctj180000', 'Monday', '5pm-7pm'),
-('ams180000', 'Monday', '5pm-7pm'),
-('jjw180000', 'Monday', '5pm-7pm');
+values ('abc180000', 'Monday', '09:00-12:00'),
+('abc180000', 'Monday', '17:00-19:00'),
+('abc180000', 'Tuesday', '17:00-19:00'),
+('abc180000', 'Thursday', '17:00-19:00'),
+('abc180000', 'Friday', '17:00-19:00'),
+('def180000', 'Monday', '09:00-12:00'),
+('def180000', 'Tuesday', '10:00-13:00'),
+('def180000', 'Wednesday', '11:00-14:00'),
+('def180000', 'Thursday', '12:00-15:00'),
+('def180000', 'Friday', '13:00-16:00'),
+('ghi180000', 'Monday', '09:30-12:30'),
+('ghi180000', 'Tuesday', '10:30-13:30'),
+('ghi180000', 'Wednesday', '11:30-14:30'),
+('ghi180000', 'Thursday', '12:30-15:30'),
+('ghi180000', 'Friday', '13:30-16:30'),
+('jkl180000', 'Monday', '09:00-12:30'),
+('jkl180000', 'Tueday', '09:30-13:00'),
+('jkl180000', 'Wednesday', '10:00-13:30'),
+('jkl180000', 'Thursday', '10:30-14:00'),
+('jkl180000', 'Friday', '11:00-14:30'),
+('axc180000', 'Monday', '17:00-19:00'),
+('jad180000', 'Monday', '17:00-19:00'),
+('ctj180000', 'Monday', '17:00-19:00'),
+('ams180000', 'Monday', '17:00-19:00'),
+('jjw180000', 'Monday', '17:00-19:00');
 --done
 
 insert into FavoriteTutors (student_id, tutor_id)
